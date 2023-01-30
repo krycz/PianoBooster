@@ -48,22 +48,30 @@
 class CColor
 {
 public:
-    CColor() { red = green = blue = 0; }
+    constexpr CColor()
+        : red(0.0f)
+        , green(0.0f)
+        , blue(0.0f)
+    {}
 
-    CColor(double r, double g, double b)
+    constexpr CColor(float r, float g, float b)
+        : red(r)
+        , green(g)
+        , blue(b)
+    {}
+
+    constexpr CColor(double r, double g, double b)
+        : red(static_cast<float>(r))
+        , green(static_cast<float>(g))
+        , blue(static_cast<float>(b))
+    {}
+
+    constexpr bool operator==(CColor color)
     {
-        red = static_cast<float>(r);
-        green = static_cast<float>(g);
-        blue = static_cast<float>(b);
+        return red == color.red && green == color.green && blue == color.blue;
     }
+
     float red, green, blue;
-
-    bool operator==(CColor color)
-    {
-        if (red == color.red && green == color.green && blue == color.blue)
-            return true;
-        return false;
-    }
 };
 
 /*!
