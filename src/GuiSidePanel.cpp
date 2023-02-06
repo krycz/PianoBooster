@@ -32,6 +32,7 @@
 #include "GuiTopBar.h"
 #include "TrackList.h"
 #include "Conductor.h"
+#include "Draw.h"
 
 GuiSidePanel::GuiSidePanel(QWidget *parent, CSettings* settings)
     : QWidget(parent), m_parent(parent)
@@ -331,7 +332,6 @@ void GuiSidePanel::on_rhythmTappingCombo_activated (int index)
 void GuiSidePanel::on_clefComboChange (const QString &name, int value)
 {
     m_settings->setValue(name,value);
+    CDraw::forceCompileRedraw();
     m_song->refreshScroll();
-    //m_score->drawScore(); // TODO makes it crash
-    //TODO do I need to do more to request a redraw?
 }
