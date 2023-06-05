@@ -109,9 +109,6 @@ endif ()
 find_package(${PACKAGE_NAMESPACE_PREFIX}c++utilities${CONFIGURATION_PACKAGE_SUFFIX} 5.20.0 REQUIRED)
 use_cpp_utilities(VISIBILITY PUBLIC)
 
-# apply basic configuration
-include(BasicConfig)
-
 # find qtutilities
 find_package(${PACKAGE_NAMESPACE_PREFIX}qtutilities${CONFIGURATION_PACKAGE_SUFFIX_QTUTILITIES} 6.11.0 REQUIRED)
 use_qt_utilities()
@@ -122,6 +119,10 @@ if (NOT DATA_DIR)
     set(DATA_DIR "share/games/pianobooster")
 endif ()
 add_compile_options("-DDATA_DIR=\"${DATA_DIR}\"")
+set(CMAKE_INSTALL_DATAROOTDIR "${CMAKE_INSTALL_DATAROOTDIR}/games")  # used by c++/qtutilities
+
+# apply basic configuration
+include(BasicConfig)
 
 # find OpenGL
 set(OpenGL_GL_PREFERENCE "GLVND")
@@ -158,9 +159,11 @@ else (USE_FTGL)
     add_compile_options("-DNO_USE_FTGL")
 endif (USE_FTGL)
 
-# configure internationalization support
+# configure translations
 if (NO_LANGS)
     add_compile_options("-DNO_LANGS")
+else ()
+    add_subdirectory(../translations ../build/translations)
 endif ()
 
 # find Qt libraries
@@ -321,11 +324,6 @@ if (NOT USE_SYSTEM_FONT)
     configure_file(fonts/DejaVuSans.ttf ${CMAKE_CURRENT_BINARY_DIR}/fonts/DejaVuSans.ttf COPYONLY)
     install(FILES fonts/DejaVuSans.ttf DESTINATION ${DATA_DIR}/fonts/)
 endif (NOT USE_SYSTEM_FONT)
-
-# make translations
-if (NOT NO_LANGS)
-    add_subdirectory(../translations ../build/translations)
-endif (NOT NO_LANGS)
 
 # configure debugging flags
 if (DEBUG_LOG_TRACE)
