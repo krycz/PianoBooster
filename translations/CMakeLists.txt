@@ -26,8 +26,7 @@ endif()
 get_filename_component(full_path_blank_ts ${CMAKE_CURRENT_SOURCE_DIR}/pianobooster_blank.ts ABSOLUTE)
 list(REMOVE_ITEM TRANSLATIONS_FILES ${full_path_blank_ts})
 
-set(QT_PACKAGE_NAME Qt5 CACHE STRING "Name of the Qt package to use, set e.g. to \"Qt6\" to use Qt 6")
-FIND_PACKAGE("${QT_PACKAGE_NAME}" REQUIRED COMPONENTS LinguistTools)
+FIND_PACKAGE("${QT_PACKAGE_PREFIX}LinguistTools" REQUIRED COMPONENTS LinguistTools)
 
 if(COMMAND QT_ADD_TRANSLATION)
     QT_ADD_TRANSLATION(QM_FILES ${TRANSLATIONS_FILES})

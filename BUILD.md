@@ -11,7 +11,7 @@ and then run CMake from it:
 ```
 $ mkdir build
 $ cd build
-$ cmake .. -DQT_PACKAGE_NAME=Qt6 # or cmake .. -DQT_PACKAGE_NAME=Qt5
+$ cmake .. -DQT_PACKAGE_PREFIX=Qt6 # or cmake .. -DQT_PACKAGE_PREFIX=Qt5
 ```
 
 To compile the PianoBooster source code type:
