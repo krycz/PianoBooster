@@ -166,7 +166,7 @@ void CDraw::drawNoteName(int midiNote, float x, float y, int type)
                   scaleGlVertex( -2.52933f, x,   6.25291f, y);  //  1
                   scaleGlVertex( -2.50344f, x,   -6.25291f, y);  //  2
                   scaleGlVertex( 0.76991f, x,   -3.63422f, y);  //  3
-                  scaleGlVertex( 2.07925ff, x,   -1.67021f, y);  //  4
+                  scaleGlVertex( 2.07925f, x,   -1.67021f, y);  //  4
                   scaleGlVertex( 2.52933f, x,   0.25288f, y);  //  5
                   scaleGlVertex( 1.42458f, x,   1.07122f, y);  //  6
                   scaleGlVertex( -0.53943f, x,   0.90755f, y);  //  7
@@ -225,7 +225,7 @@ void CDraw::drawNoteName(int midiNote, float x, float y, int type)
           glBegin(GL_LINE_STRIP);
               //  letterF2
               scaleGlVertex( -2.55172f, x,   -4.434285f, y);  //  1
-              scaleGlVertex( -2.51956f, x,   4.433665ff, y);  //  2
+              scaleGlVertex( -2.51956f, x,   4.433665f, y);  //  2
               scaleGlVertex( 2.39942f, x,   4.434285f, y);  //  3
           glEnd();
           glBegin(GL_LINES);
