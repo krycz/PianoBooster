@@ -48,6 +48,7 @@
 #include "GuiSidePanel.h"
 #include "QtWindow.h"
 #include "version.h"
+#include "resources/config.h"
 
 #if WITH_INTERNAL_FLUIDSYNTH
 #include "MidiDeviceFluidSynth.h"
@@ -384,7 +385,7 @@ void CSettings::loadSettings()
 {
     unzipBoosterMusicBooks();
     // Set default values
-    setValue("PianoBooster/Version", PB_VERSION);
+    setValue("PianoBooster/Version", APP_VERSION);
     setDefaultValue("ShortCuts/LeftHand", "F2");
     setDefaultValue("ShortCuts/BothHands","F3");
     setDefaultValue("ShortCuts/RightHand","F4");

@@ -26,7 +26,7 @@
 
 #include "GlView.h"
 #include "QtWindow.h"
-#include "version.h"
+#include "resources/config.h"
 
 #include <QDebug>
 #include <QSurfaceFormat>
@@ -290,7 +290,7 @@ void QtWindow::decodeCommandLine()
             }
             else if (arg.startsWith("-v") || arg.startsWith("--version"))
             {
-                fprintf(stdout, "pianobooster Version " PB_VERSION"\n");
+                fprintf(stdout, "pianobooster Version " APP_VERSION "\n");
                 exit(0);
             }
             else
@@ -597,7 +597,7 @@ void QtWindow::about()
     QMessageBox msgBox(this);
     msgBox.setWindowTitle (tr("About Piano Booster"));
     msgBox.setText(
-            tr("<b>PianoBooster - Version %1</b> <br><br>").arg(PB_VERSION) %
+            tr("<b>PianoBooster - Version %1</b> <br><br>").arg(APP_VERSION) %
             tr("<b>Boost</b> your <b>Piano</b> playing skills!<br><br>") %
             QStringLiteral("<a href=\"https://www.pianobooster.org/\" ><b>https://www.pianobooster.org/</b></a><br><br>") %
             tr("Copyright(c) L. J. Barman, 2008-2020; All rights reserved.<br>") %
