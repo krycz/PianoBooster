@@ -1,8 +1,7 @@
 cmake_minimum_required(VERSION 3.1.0 FATAL_ERROR)
 
-# set meta data
-# note: I am treating is for now a fork as upstream does not merge any patches anymore.
-#       Hence I am putting myself as author here and use my fork's URL.
+# set meta data: I am treating is for now a fork as upstream does not merge any patches anymore. Hence I am putting myself as
+# author here and use my fork's URL.
 project(pianobooster)
 set(META_PROJECT_NAME ${PROJECT_NAME})
 set(META_PROJECT_TYPE application)
@@ -17,10 +16,27 @@ set(META_VERSION_MINOR 0)
 set(META_VERSION_PATCH 1)
 set(META_RELEASE_DATE "2023-05-06")
 
-set(SRC_FILES MidiFile.cpp MidiTrack.cpp Song.cpp Conductor.cpp Util.cpp
-    Chord.cpp Tempo.cpp MidiDevice.cpp MidiDeviceRt.cpp)
-set(HEADER_FILES MidiFile.h MidiTrack.h Song.h Conductor.h Rating.h Util.h
-    Chord.h Tempo.h MidiDevice.h MidiDeviceRt.h)
+set(SRC_FILES
+    MidiFile.cpp
+    MidiTrack.cpp
+    Song.cpp
+    Conductor.cpp
+    Util.cpp
+    Chord.cpp
+    Tempo.cpp
+    MidiDevice.cpp
+    MidiDeviceRt.cpp)
+set(HEADER_FILES
+    MidiFile.h
+    MidiTrack.h
+    Song.h
+    Conductor.h
+    Rating.h
+    Util.h
+    Chord.h
+    Tempo.h
+    MidiDevice.h
+    MidiDeviceRt.h)
 set(WIDGETS_SRC_FILES
     QtMain.cpp
     QtWindow.cpp
@@ -46,8 +62,7 @@ set(WIDGETS_SRC_FILES
     Merge.cpp
     pianobooster.rc
     application.qrc
-    images/pianobooster.ico
-)
+    images/pianobooster.ico)
 set(WIDGETS_HEADER_FILES
     QtWindow.h
     GuiTopBar.h
@@ -69,27 +84,26 @@ set(WIDGETS_HEADER_FILES
     Rating.h
     Bar.h
     Settings.h
-    Merge.h
-)
+    Merge.h)
 set(WIDGETS_UI_FILES
-    ./GuiTopBar.ui
-    ./GuiSidePanel.ui
-    ./GuiMidiSetupDialog.ui
-    ./GuiKeyboardSetupDialog.ui
-    ./GuiPreferencesDialog.ui
-    ./GuiSongDetailsDialog.ui
-    ./GuiLoopingPopup.ui
-)
+    GuiTopBar.ui
+    GuiSidePanel.ui
+    GuiMidiSetupDialog.ui
+    GuiKeyboardSetupDialog.ui
+    GuiPreferencesDialog.ui
+    GuiSongDetailsDialog.ui
+    GuiLoopingPopup.ui)
+set(CMAKE_MODULE_FILES ../CMakeLists.txt ../translations/CMakeLists.txt)
 
 option(WITH_INTERNAL_FLUIDSYNTH "Build with an internal FluidSynth sound generator" ON)
 option(USE_FTGL "Build with ftgl for notes localization" ON)
 option(USE_SYSTEM_FONT "Build with system font" OFF)
 option(USE_JACK "Build with Jack (Only required for BSD Unix)" OFF)
-if(${CMAKE_SYSTEM} MATCHES "Linux")
-   option(USE_BUNDLED_RTMIDI "Build with bundled rtmidi (for older distributions only)" OFF)
-else()
-   option(USE_BUNDLED_RTMIDI "Build with bundled rtmidi" ON)
-endif()
+if (${CMAKE_SYSTEM} MATCHES "Linux")
+    option(USE_BUNDLED_RTMIDI "Build with bundled rtmidi (for older distributions only)" OFF)
+else ()
+    option(USE_BUNDLED_RTMIDI "Build with bundled rtmidi" ON)
+endif ()
 
 # find c++utilities
 find_package(${PACKAGE_NAMESPACE_PREFIX}c++utilities${CONFIGURATION_PACKAGE_SUFFIX} 5.20.0 REQUIRED)
@@ -104,53 +118,60 @@ use_qt_utilities()
 
 # configure prefix and data dir (FIXME: avoid hardcoding this and use relative lookup instead)
 add_compile_options("-DPREFIX=\"${CMAKE_INSTALL_PREFIX}\"")
-if(NOT DATA_DIR)
+if (NOT DATA_DIR)
     set(DATA_DIR "share/games/pianobooster")
-endif()
+endif ()
 add_compile_options("-DDATA_DIR=\"${DATA_DIR}\"")
 
 # find OpenGL
 set(OpenGL_GL_PREFERENCE "GLVND")
-FIND_PACKAGE( OpenGL REQUIRED )
+find_package(OpenGL REQUIRED)
 
 # find pkg-config
-if(NOT WIN32 OR MINGW)
-   # the `pkg_check_modules` function is created with this call
-   include(FindPkgConfig)
-   FIND_PACKAGE( PkgConfig REQUIRED )
-endif()
+if (NOT WIN32 OR MINGW)
+    # the `pkg_check_modules` function is created with this call
+    include(FindPkgConfig)
+    find_package(PkgConfig REQUIRED)
+endif ()
 
 # find FTGL
-if(USE_FTGL)
-   if(NOT WIN32)
-      pkg_check_modules(FTGL ftgl)
-      if(NOT FTGL_FOUND)
-         MESSAGE(FATAL_ERROR "FTGL was not found")
-      endif(NOT FTGL_FOUND)
-      SET(FTGL_INCLUDE_DIR ${FTGL_INCLUDE_DIRS})
-      SET(FTGL_LIBRARY ${FTGL_LIBRARIES})
-   else()
-      FIND_PACKAGE(FTGL REQUIRED)
+if (USE_FTGL)
+    if (NOT WIN32)
+        pkg_check_modules(FTGL ftgl)
+        if (NOT FTGL_FOUND)
+            message(FATAL_ERROR "FTGL was not found")
+        endif (NOT FTGL_FOUND)
+        set(FTGL_INCLUDE_DIR ${FTGL_INCLUDE_DIRS})
+        set(FTGL_LIBRARY ${FTGL_LIBRARIES})
+    else ()
+        find_package(FTGL REQUIRED)
 
-      # add include path for freetype2 as ftgl uses freetype2 headers but doesn't pull in the include path automatically
-      if (COMMAND pkg_check_modules)
-          pkg_check_modules(FREETYPE2 freetype2)
-          if(FREETYPE2_FOUND)
-              LIST(APPEND FTGL_INCLUDE_DIR "${FREETYPE2_INCLUDE_DIRS}")
-          endif ()
-      endif ()
-   endif()
-else(USE_FTGL)
+        # add include path for freetype2 as ftgl uses freetype2 headers but doesn't pull in the include path automatically
+        if (COMMAND pkg_check_modules)
+            pkg_check_modules(FREETYPE2 freetype2)
+            if (FREETYPE2_FOUND)
+                list(APPEND FTGL_INCLUDE_DIR "${FREETYPE2_INCLUDE_DIRS}")
+            endif ()
+        endif ()
+    endif ()
+else (USE_FTGL)
     add_compile_options("-DNO_USE_FTGL")
-endif(USE_FTGL)
+endif (USE_FTGL)
 
 # configure internationalization support
-if(NO_LANGS)
+if (NO_LANGS)
     add_compile_options("-DNO_LANGS")
-endif()
+endif ()
 
 # find Qt libraries
-list(APPEND ADDITIONAL_QT_MODULES Core Gui Widgets OpenGL Xml)
+list(
+    APPEND
+    ADDITIONAL_QT_MODULES
+    Core
+    Gui
+    Widgets
+    OpenGL
+    Xml)
 if (QT_PACKAGE_PREFIX MATCHES ".*Qt([0-9]+).*")
     list(APPEND ADDITIONAL_QT_MODULES OpenGLWidgets Core5Compat)
 endif ()
@@ -158,85 +179,85 @@ include(QtGuiConfig)
 include(QtConfig)
 
 # add platform-specific libraries
-if(${CMAKE_SYSTEM} MATCHES "Linux")
-    ADD_DEFINITIONS(-D__LINUX_ALSA__)
-    LINK_LIBRARIES (asound)
-    LINK_LIBRARIES (pthread)
-    LINK_LIBRARIES (GL)
-endif(${CMAKE_SYSTEM} MATCHES "Linux")
-if(${CMAKE_SYSTEM} MATCHES "Windows")
-    ADD_DEFINITIONS(-D__WINDOWS_MM__ -D_WIN32)
-    LINK_LIBRARIES(winmm opengl32)
-endif(${CMAKE_SYSTEM} MATCHES "Windows")
-if(${CMAKE_SYSTEM} MATCHES "Darwin")
-    ADD_DEFINITIONS(-D__MACOSX_CORE__)
-    ADD_DEFINITIONS(-std=c++11)
-    LINK_LIBRARIES("-framework CoreMidi -framework CoreAudio -framework CoreFoundation -framework OpenGL")
-endif(${CMAKE_SYSTEM} MATCHES "Darwin")
+if (${CMAKE_SYSTEM} MATCHES "Linux")
+    add_definitions(-D__LINUX_ALSA__)
+    link_libraries(asound)
+    link_libraries(pthread)
+    link_libraries(GL)
+endif (${CMAKE_SYSTEM} MATCHES "Linux")
+if (${CMAKE_SYSTEM} MATCHES "Windows")
+    add_definitions(-D__WINDOWS_MM__ -D_WIN32)
+    link_libraries(winmm opengl32)
+endif (${CMAKE_SYSTEM} MATCHES "Windows")
+if (${CMAKE_SYSTEM} MATCHES "Darwin")
+    add_definitions(-D__MACOSX_CORE__)
+    add_definitions(-std=c++11)
+    link_libraries("-framework CoreMidi -framework CoreAudio -framework CoreFoundation -framework OpenGL")
+endif (${CMAKE_SYSTEM} MATCHES "Darwin")
 
 # find FluidSynth
-if(WITH_INTERNAL_FLUIDSYNTH)
-    if(NOT WIN32)
+if (WITH_INTERNAL_FLUIDSYNTH)
+    if (NOT WIN32)
         pkg_check_modules(FLUIDSYNTH fluidsynth)
 
-        if(NOT FLUIDSYNTH_FOUND)
-           MESSAGE(FATAL_ERROR "FLUIDSYNTH was not found")
-        endif(NOT FLUIDSYNTH_FOUND)
-        INCLUDE_DIRECTORIES(${FLUIDSYNTH_INCLUDE_DIRS})
-        SET(FLUIDSYNTH_LIBRARY ${FLUIDSYNTH_LIBRARIES})
-    else()
+        if (NOT FLUIDSYNTH_FOUND)
+            message(FATAL_ERROR "FLUIDSYNTH was not found")
+        endif (NOT FLUIDSYNTH_FOUND)
+        include_directories(${FLUIDSYNTH_INCLUDE_DIRS})
+        set(FLUIDSYNTH_LIBRARY ${FLUIDSYNTH_LIBRARIES})
+    else ()
         # find FluidSynth and link against its imported target
-        FIND_PACKAGE(FluidSynth REQUIRED)
-        SET(FLUIDSYNTH_LIBRARY FluidSynth::libfluidsynth)
+        find_package(FluidSynth REQUIRED)
+        set(FLUIDSYNTH_LIBRARY FluidSynth::libfluidsynth)
 
         # find additional dependencies that are pulled in by the imported target but not automatically made available
-        FIND_PACKAGE(OpenMP REQUIRED)
+        find_package(OpenMP REQUIRED)
         if (COMMAND pkg_check_modules)
             pkg_check_modules(GLIB IMPORTED_TARGET glib-2.0 gthread-2.0)
             pkg_check_modules(LIBSNDFILE IMPORTED_TARGET sndfile)
             pkg_check_modules(PORTAUDIO IMPORTED_TARGET portaudio-2.0)
             pkg_check_modules(READLINE IMPORTED_TARGET readline)
         endif ()
-    endif()
-    ADD_DEFINITIONS(-DWITH_INTERNAL_FLUIDSYNTH)
-    MESSAGE("Building with internal fluidsynth")
+    endif ()
+    add_definitions(-DWITH_INTERNAL_FLUIDSYNTH)
+    message("Building with internal fluidsynth")
     list(APPEND SRC_FILES MidiDeviceFluidSynth.cpp)
-endif(WITH_INTERNAL_FLUIDSYNTH)
+endif (WITH_INTERNAL_FLUIDSYNTH)
 
 # find JACK
-if(USE_JACK)
+if (USE_JACK)
     # Check for Jack
     find_library(JACK_LIB jack)
     pkg_check_modules(JACK jack)
-    if(NOT JACK_FOUND)
-        MESSAGE(FATAL_ERROR "JACK was not found")
-    endif(NOT JACK_FOUND)
+    if (NOT JACK_FOUND)
+        message(FATAL_ERROR "JACK was not found")
+    endif (NOT JACK_FOUND)
 
-    SET(JACK_INCLUDE_DIR ${JACK_INCLUDE_DIRS})
-    SET(JACK_LIBRARY ${JACK_LIBRARIES})
-    if(JACK_FOUND)
-        ADD_DEFINITIONS(-D__UNIX_JACK__)
-    endif(JACK_FOUND)
-endif(USE_JACK)
+    set(JACK_INCLUDE_DIR ${JACK_INCLUDE_DIRS})
+    set(JACK_LIBRARY ${JACK_LIBRARIES})
+    if (JACK_FOUND)
+        add_definitions(-D__UNIX_JACK__)
+    endif (JACK_FOUND)
+endif (USE_JACK)
 
 # find RtMidi
-if(USE_BUNDLED_RTMIDI)
+if (USE_BUNDLED_RTMIDI)
     message(STATUS "Building using bundled rtmidi")
     add_compile_options("-DUSE_BUNDLED_RTMIDI")
     include_directories("3rdparty")
     list(APPEND SRC_FILES 3rdparty/rtmidi/RtMidi.cpp)
     list(APPEND HEADER_FILES 3rdparty/rtmidi/RtMidi.h)
-else()
+else ()
     pkg_check_modules(RTMIDI rtmidi)
-    if(NOT RTMIDI_FOUND)
-        MESSAGE(FATAL_ERROR "rtmidi not found (Try building with option USE_BUNDLED_RTMIDI=ON)")
-    endif(NOT RTMIDI_FOUND)
+    if (NOT RTMIDI_FOUND)
+        message(FATAL_ERROR "rtmidi not found (Try building with option USE_BUNDLED_RTMIDI=ON)")
+    endif (NOT RTMIDI_FOUND)
     include_directories(${RTMIDI_INCLUDE_DIRS})
     link_directories(${RTMIDI_LIBRARY_DIRS})
-endif()
+endif ()
 
 # configure MacOS-specific bundling
-if(APPLE)
+if (APPLE)
     # the property added the pianobooster icon to Info.plist
     set(MACOSX_BUNDLE_ICON_FILE pianobooster.icns)
 
@@ -252,63 +273,66 @@ if(APPLE)
     set(pianobooster_FONT ${CMAKE_CURRENT_SOURCE_DIR}/fonts/DejaVuSans.ttf)
     set_source_files_properties(${pianobooster_FONT} PROPERTIES MACOSX_PACKAGE_LOCATION "Resources/fonts")
 
-    add_custom_target(install-translations cp -R -v ${CMAKE_CURRENT_BINARY_DIR}/translations/*.qm ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}.app/Contents/Resources/translations)
-endif()
+    add_custom_target(install-translations cp -R -v ${CMAKE_CURRENT_BINARY_DIR}/translations/*.qm
+                                           ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}.app/Contents/Resources/translations)
+endif ()
 
 # configure executable
 include(AppTarget)
-target_include_directories("${META_TARGET_NAME}" PRIVATE ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_BINARY_DIR} ${OPENGL_INCLUDE_DIR} ${FTGL_INCLUDE_DIR})
+target_include_directories("${META_TARGET_NAME}" PRIVATE ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_BINARY_DIR}
+                                                         ${OPENGL_INCLUDE_DIR} ${FTGL_INCLUDE_DIR})
 target_link_directories("${META_TARGET_NAME}" PRIVATE ${FTGL_LIBRARY_DIRS} ${JACK_LIBRARY_DIRS} ${FLUIDSYNTH_LIBRARY_DIRS})
-target_link_libraries("${META_TARGET_NAME}" PRIVATE ${OPENGL_LIBRARIES} ${FTGL_LIBRARY} ${RTMIDI_LIBRARIES} ${JACK_LIBRARY} ${FLUIDSYNTH_LIBRARY} ${RTMIDI_LIBRARY})
+target_link_libraries("${META_TARGET_NAME}" PRIVATE ${OPENGL_LIBRARIES} ${FTGL_LIBRARY} ${RTMIDI_LIBRARIES} ${JACK_LIBRARY}
+                                                    ${FLUIDSYNTH_LIBRARY} ${RTMIDI_LIBRARY})
 
 # install various additional files
-if(NOT APPLE)
+if (NOT APPLE)
     install(FILES ../pianobooster.desktop DESTINATION share/applications)
     install(TARGETS "${META_TARGET_NAME}" RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
-endif(NOT APPLE)
-if(NOT NO_DOCS)
+endif (NOT APPLE)
+if (NOT NO_DOCS)
     install(FILES ../README.md DESTINATION share/doc/pianobooster/)
     install(FILES ../doc/faq.md DESTINATION share/doc/pianobooster/)
-endif()
-if(NOT NO_LICENSE)
+endif ()
+if (NOT NO_LICENSE)
     install(FILES ../license.txt DESTINATION share/licenses/pianobooster/)
-endif()
-if(NOT NO_CHANGELOG)
+endif ()
+if (NOT NO_CHANGELOG)
     install(FILES ../Changelog.txt DESTINATION share/doc/pianobooster/)
-endif()
-if(WITH_MAN)
-    install(FILES ../pianobooster.6  DESTINATION share/man/man6/)
-endif()
+endif ()
+if (WITH_MAN)
+    install(FILES ../pianobooster.6 DESTINATION share/man/man6/)
+endif ()
 install(FILES ../icons/hicolor/32x32/pianobooster.png DESTINATION share/icons/hicolor/32x32/apps)
 install(FILES ../icons/hicolor/48x48/pianobooster.png DESTINATION share/icons/hicolor/48x48/apps)
 install(FILES ../icons/hicolor/64x64/pianobooster.png DESTINATION share/icons/hicolor/64x64/apps)
 
 # configure and install music books
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/../music/BoosterMusicBooks.zip ${CMAKE_CURRENT_BINARY_DIR}/ COPYONLY)
-if(UNIX AND NOT APPLE)
+if (UNIX AND NOT APPLE)
     install(FILES ../music/BoosterMusicBooks.zip DESTINATION ${DATA_DIR}/music)
-endif(UNIX AND NOT APPLE)
-if(WIN32)
+endif (UNIX AND NOT APPLE)
+if (WIN32)
     install(FILES ../music/BoosterMusicBooks.zip DESTINATION .)
-endif(WIN32)
+endif (WIN32)
 
 # install fonts
-if(NOT USE_SYSTEM_FONT)
+if (NOT USE_SYSTEM_FONT)
     configure_file(fonts/DejaVuSans.ttf ${CMAKE_CURRENT_BINARY_DIR}/fonts/DejaVuSans.ttf COPYONLY)
     install(FILES fonts/DejaVuSans.ttf DESTINATION ${DATA_DIR}/fonts/)
-endif(NOT USE_SYSTEM_FONT)
+endif (NOT USE_SYSTEM_FONT)
 
 # make translations
-if(NOT NO_LANGS)
+if (NOT NO_LANGS)
     add_subdirectory(../translations ../build/translations)
-endif(NOT NO_LANGS)
+endif (NOT NO_LANGS)
 
 # configure debugging flags
-if(DEBUG_LOG_TRACE)
-    ADD_DEFINITIONS(-DPB_LOG_TRACE)
-endif()
-if(DEBUG_LOG_TIMING)
-    ADD_DEFINITIONS(-DPB_LOG_TIMING)
-endif()
+if (DEBUG_LOG_TRACE)
+    add_definitions(-DPB_LOG_TRACE)
+endif ()
+if (DEBUG_LOG_TIMING)
+    add_definitions(-DPB_LOG_TIMING)
+endif ()
 
 include(ConfigHeader)
