@@ -61,11 +61,10 @@
 #define debugSettings(args)
 #endif
 
-CSettings::CSettings(QtWindow *mainWindow) : QSettings(CSettings::IniFormat, CSettings::UserScope, "PianoBooster", "Piano Booster"),
-                                 m_mainWindow(mainWindow)
+CSettings::CSettings()
+    : QSettings(CSettings::IniFormat, CSettings::UserScope, "PianoBooster", "Piano Booster")
+    , m_mainWindow(nullptr)
 {
-    // It is all done in the initialisation list
-
     m_advancedMode = false;
     m_pianistActive = false;
     m_noteNamesEnabled = value("Score/NoteNames", true ).toBool();
@@ -86,8 +85,9 @@ void CSettings::setDefaultValue(const QString & key, const QVariant & value )
     setValue(key, value);
 }
 
-void CSettings::init(CSong* song, GuiSidePanel* sidePanel, GuiTopBar* topBar)
+void CSettings::init(QtWindow *mainWindow, CSong* song, GuiSidePanel* sidePanel, GuiTopBar* topBar)
 {
+    m_mainWindow = mainWindow;
     m_song = song;
     m_guiSidePanel = sidePanel;
     m_guiTopBar = topBar;
@@ -272,6 +272,9 @@ void CSettings::saveXmlFile()
 
 void CSettings::updateTutorPage()
 {
+    if (!m_mainWindow) {
+        return;
+    }
     QFileInfo fileInfo(getCurrentSongLongFileName());
     const char* EXTN = ".html";
 
@@ -413,7 +416,7 @@ void CSettings::unzipBoosterMusicBooks()
     // Set default value
     const QString ZIPFILENAME("BoosterMusicBooks.zip");
 
-    if (value("PianoBooster/MusicRelease", 0).toInt() < MUSIC_RELEASE)
+    if (m_mainWindow && value("PianoBooster/MusicRelease", 0).toInt() < MUSIC_RELEASE)
     {
         QString musicSrcDir = QApplication::applicationDirPath() + "/";
 
@@ -501,8 +504,10 @@ void CSettings::setCurrentSongName(const QString & name)
 
     m_guiSidePanel->refresh();
     m_guiTopBar->refresh(true);
-    m_mainWindow->setWindowTitle("Piano Booster - " + m_song->getSongTitle());
-    updateTutorPage();
+    if (m_mainWindow) {
+        m_mainWindow->setWindowTitle("Piano Booster - " + m_song->getSongTitle());
+        updateTutorPage();
+    }
 }
 
 void CSettings::setCurrentBookName(const QString & name, bool clearSongName)

@@ -28,6 +28,7 @@
 #include <cstdlib>
 
 #include "QtWindow.h"
+#include "Settings.h"
 #include "resources/config.h"
 
 int main(int argc, char *argv[]) {
@@ -35,8 +36,10 @@ int main(int argc, char *argv[]) {
     SET_QT_APPLICATION_INFO;
     QGuiApplication::setDesktopFileName(QStringLiteral(PROJECT_NAME));
     auto app = QApplication(argc, argv);
+    auto settings = CSettings();
     auto qtSettings = QtUtilities::QtSettings();
     qtSettings.disableNotices();
+    qtSettings.restore(settings);
     qtSettings.apply();
 
     // print version
@@ -49,9 +52,10 @@ int main(int argc, char *argv[]) {
     }
 
     // show main window and execute app
-    auto window = QtWindow();
+    auto window = QtWindow(&settings, &qtSettings);
     window.show();
     const auto ret = app.exec();
+    settings.writeSettings();
     closeLogs();
     return ret;
 }

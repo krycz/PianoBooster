@@ -50,12 +50,17 @@ class QTextBrowser;
 
 static constexpr int maxRecentFiles() { return 20; }
 
+namespace QtUtilities {
+class SettingsDialog;
+class QtSettings;
+} // namespace QtUtilities
+
 class QtWindow : public QMainWindow
 {
     Q_OBJECT
 
 public:
-    QtWindow();
+    QtWindow(CSettings* settings, QtUtilities::QtSettings *qtSettings = nullptr, QWidget *parent = nullptr);
     ~QtWindow();
 
     void init();
@@ -111,6 +116,8 @@ private slots:
         keyboardSetup.init(m_song, m_settings);
         keyboardSetup.exec();
     }
+
+    void showUISettingsDialog();
 
     void toggleSidePanel()
     {
@@ -193,6 +200,8 @@ private:
     void writeSettings();
 
     CSettings* m_settings;
+    QtUtilities::QtSettings *m_qtSettings;
+    QtUtilities::SettingsDialog *m_settingsDlg;
 
     GuiSidePanel *m_sidePanel;
     GuiTopBar *m_topBar;
@@ -217,6 +226,7 @@ private:
     QAction *m_viewPianoKeyboard;
     QAction *m_fullScreenStateAct;
     QAction *m_setupPreferencesAct;
+    QAction *m_setupUISettingsAct;
     QAction *m_songDetailsAct;
 
     QMenu *m_fileMenu;

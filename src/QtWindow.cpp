@@ -28,6 +28,10 @@
 #include "QtWindow.h"
 #include "resources/config.h"
 
+#include <qtutilities/settingsdialog/optioncategorymodel.h>
+#include <qtutilities/settingsdialog/qtsettings.h>
+#include <qtutilities/settingsdialog/settingsdialog.h>
+
 #include <QDebug>
 #include <QSurfaceFormat>
 #include <QStringBuilder>
@@ -56,9 +60,12 @@ static int set_realtime_priority(int policy, int prio)
 }
 #endif
 
-QtWindow::QtWindow()
+QtWindow::QtWindow(CSettings *settings, QtUtilities::QtSettings *qtSettings, QWidget *parent)
+    : QMainWindow(parent)
+    , m_settings(settings)
+    , m_qtSettings(qtSettings)
+    , m_settingsDlg(nullptr)
 {
-    m_settings = new CSettings(this);
     setWindowIcon(QIcon(":/images/pianobooster.png"));
     setWindowTitle(tr("Piano Booster"));
 
@@ -104,7 +111,7 @@ QtWindow::QtWindow()
     m_tutorWindow = new QTextBrowser(this);
     m_tutorWindow->hide();
 
-    m_settings->init(m_song, m_sidePanel, m_topBar);
+    m_settings->init(this, m_song, m_sidePanel, m_topBar);
 
     mainLayout->addWidget(m_sidePanel);
     columnLayout->addWidget(m_topBar);
@@ -159,7 +166,6 @@ void QtWindow::init()
 
 QtWindow::~QtWindow()
 {
-    delete m_settings;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -375,6 +381,11 @@ void QtWindow::createActions()
     m_setupPreferencesAct->setShortcut(tr("Ctrl+P"));
     connect(m_setupPreferencesAct, SIGNAL(triggered()), this, SLOT(showPreferencesDialog()));
 
+    m_setupUISettingsAct = new QAction(tr("&UI settings ..."), this);
+    m_setupUISettingsAct->setToolTip(tr("UI-related settings"));
+    m_setupUISettingsAct->setShortcut(tr("Ctrl+U"));
+    connect(m_setupUISettingsAct, &QAction::triggered, this, &QtWindow::showUISettingsDialog);
+
     m_songDetailsAct = new QAction(tr("Song &Details ..."), this);
     m_songDetailsAct->setToolTip(tr("Song Settings"));
     m_songDetailsAct->setShortcut(tr("Ctrl+D"));
@@ -454,6 +465,9 @@ void QtWindow::createMenus()
     m_setupMenu->addAction(m_setupMidiAct);
     m_setupMenu->addAction(m_setupKeyboardAct);
     m_setupMenu->addAction(m_setupPreferencesAct);
+    if (m_qtSettings) {
+        m_setupMenu->addAction(m_setupUISettingsAct);
+    }
 
     m_helpMenu = menuBar()->addMenu(tr("&Help"));
     m_helpMenu->setToolTipsVisible(true);
@@ -498,6 +512,26 @@ void QtWindow::showMidiSetup(){
     midiSetupDialog.exec();
     m_song->flushMidiInput();
     m_glWidget->startTimerEvent();
+}
+
+void QtWindow::showUISettingsDialog()
+{
+    if (!m_settingsDlg) {
+         m_settingsDlg = new QtUtilities::SettingsDialog(this);
+         if (m_qtSettings) {
+            m_settingsDlg->setWindowTitle(tr("UI settings"));
+            m_settingsDlg->setSingleCategory(m_qtSettings->category());
+            connect(m_settingsDlg, &QtUtilities::SettingsDialog::applied, this, [this] {
+                m_qtSettings->apply();
+                m_qtSettings->save(*m_settings);
+            });
+         }
+    }
+    if (m_settingsDlg->isHidden()) {
+         m_settingsDlg->showNormal();
+    } else {
+         m_settingsDlg->activateWindow();
+    }
 }
 
 // load the recent file list from the config file into the file menu
@@ -695,7 +729,6 @@ void QtWindow::writeSettings()
 {
     m_settings->setValue("Window/Pos", pos());
     m_settings->setValue("Window/Size", size());
-    m_settings->writeSettings();
 }
 
 void QtWindow::closeEvent(QCloseEvent *event)
