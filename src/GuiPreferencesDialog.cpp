@@ -91,7 +91,7 @@ void GuiPreferencesDialog::initLanguageCombo(){
     QDir dirLang(localeDirectory);
     dirLang.setFilter(QDir::Files | QDir::Hidden | QDir::NoDotAndDotDot);
     QFileInfoList listLang = dirLang.entryInfoList();
-    for (QFileInfo fileInfo : listLang) {
+    for (const QFileInfo &fileInfo : listLang) {
 
         QRegExp rx("(pianobooster_)(.*)(.qm)");
         if (rx.indexIn(fileInfo.fileName())!=-1){
