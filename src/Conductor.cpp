@@ -315,7 +315,7 @@ void CConductor::reconnectMidi()
 {
     if (!validMidiOutput()) {
         QString midiInputName = m_settings->value("Midi/Input").toString();
-        if (midiInputName.startsWith(tr("None"))) {
+        if (midiInputName.startsWith(QCoreApplication::translate("CConductor", "None"))) {
             CChord::setPianoRange(PC_KEY_LOWEST_NOTE, PC_KEY_HIGHEST_NOTE);
         } else {
             CChord::setPianoRange(m_settings->value("Keyboard/LowestNote", 0).toInt(),

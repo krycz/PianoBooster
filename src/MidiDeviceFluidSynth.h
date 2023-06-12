@@ -63,7 +63,7 @@ public:
 
     static QString getFluidInternalName()
     {
-        return QString(tr("Internal Sound") + " " + FLUID_NAME );
+        return QCoreApplication::translate("CMidiDeviceFluidSynth", "Internal Sound %1").arg(QString::fromUtf8(FLUID_NAME));
     }
 
 private:
