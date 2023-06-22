@@ -60,7 +60,6 @@ set(WIDGETS_SRC_FILES
     Bar.cpp
     Settings.cpp
     Merge.cpp
-    pianobooster.rc
     application.qrc
     images/pianobooster.ico)
 set(WIDGETS_HEADER_FILES
@@ -94,6 +93,7 @@ set(WIDGETS_UI_FILES
     GuiSongDetailsDialog.ui
     GuiLoopingPopup.ui)
 set(CMAKE_MODULE_FILES ../CMakeLists.txt ../translations/CMakeLists.txt)
+set(WINDOWS_ICON_PATH "${CMAKE_CURRENT_SOURCE_DIR}/images/pianobooster.ico")
 
 option(WITH_INTERNAL_FLUIDSYNTH "Build with an internal FluidSynth sound generator" ON)
 option(USE_FTGL "Build with ftgl for notes localization" ON)
@@ -280,6 +280,7 @@ if (APPLE)
 endif ()
 
 # configure executable
+include(WindowsResources)
 include(AppTarget)
 target_include_directories("${META_TARGET_NAME}" PRIVATE ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_BINARY_DIR}
                                                          ${OPENGL_INCLUDE_DIR} ${FTGL_INCLUDE_DIR})
