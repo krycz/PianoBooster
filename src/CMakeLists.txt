@@ -113,8 +113,7 @@ use_cpp_utilities(VISIBILITY PUBLIC)
 find_package(${PACKAGE_NAMESPACE_PREFIX}qtutilities${CONFIGURATION_PACKAGE_SUFFIX_QTUTILITIES} 6.11.0 REQUIRED)
 use_qt_utilities()
 
-# configure prefix and data dir (FIXME: avoid hardcoding this and use relative lookup instead)
-add_compile_options("-DPREFIX=\"${CMAKE_INSTALL_PREFIX}\"")
+# configure prefix and data dir
 if (NOT DATA_DIR)
     set(DATA_DIR "share/games/pianobooster")
 endif ()

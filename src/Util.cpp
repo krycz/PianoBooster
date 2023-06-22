@@ -26,13 +26,15 @@
 */
 /*********************************************************************************/
 
-#include <qtutilities/misc/compat.h>
-
 #include <fstream>
 #include <sstream>
 
+#include <QCoreApplication>
+#include <QDir>
 #include <QElapsedTimer>
+#include <QFile>
 #include <QTime>
+#include <QStringBuilder>
 
 #include "Util.h"
 #include "Cfg.h"
@@ -311,17 +313,17 @@ void benchMarkResults()
     }
 }
 
-// Returns the location of where the data is stored
-// for an AppImage the dataDir is must be relative to the applicationDirPath
-QString Util::dataDir() {
-    const auto appImagePath = qEnvironmentVariable("APPIMAGE");
-
-    if (appImagePath.isEmpty() )
-        return QString(PREFIX)+"/"+QString(DATA_DIR);
-    QString appImageInternalPath = QApplication::applicationDirPath();
-    int i = appImageInternalPath.lastIndexOf(PREFIX);
-
-    appImageInternalPath.truncate(i);
-
-    return (appImageInternalPath+QString(PREFIX)+"/"+QString(DATA_DIR));
+// Returns the location where the data is stored
+QString Util::dataDir(const QString &subDir) {
+    const auto appDirPath = QCoreApplication::applicationDirPath();
+    if (const auto nextToBin = QString(appDirPath % QChar('/') % subDir); QFile::exists(nextToBin)) {
+        return nextToBin;
+    }
+#ifdef Q_OS_DARWIN
+    return appDirPath % QStringLiteral("/../Resources/") % subDir;
+#else
+    return appDirPath % (QDir(appDirPath).dirName() == QLatin1String("bin")
+                             ? QStringLiteral("/../" DATA_DIR "/")
+                             : QStringLiteral("/" DATA_DIR "/")) % subDir;
+#endif
 }

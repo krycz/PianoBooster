@@ -45,9 +45,7 @@ CDraw::CDraw(CSettings* settings)
 #ifndef NO_USE_FTGL
     QStringList listPathFonts;
 
-    listPathFonts.append(Util::dataDir()+"/fonts/DejaVuSans.ttf");
-    listPathFonts.append(QApplication::applicationDirPath() + "/fonts/DejaVuSans.ttf");
-    listPathFonts.append(QApplication::applicationDirPath() + "/../Resources/fonts/DejaVuSans.ttf");
+    listPathFonts.append(Util::dataDir(QStringLiteral("fonts")) + "/DejaVuSans.ttf");
     listPathFonts.append("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf");
     listPathFonts.append("/usr/share/fonts/dejavu/DejaVuSans.ttf");
     listPathFonts.append("/usr/share/fonts/TTF/dejavu/DejaVuSans.ttf");

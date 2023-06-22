@@ -414,25 +414,14 @@ void CSettings::loadSettings()
 void CSettings::unzipBoosterMusicBooks()
 {
     // Set default value
-    const QString ZIPFILENAME("BoosterMusicBooks.zip");
+    static const auto ZIPFILENAME = QStringLiteral("BoosterMusicBooks.zip");
 
     if (m_mainWindow && value("PianoBooster/MusicRelease", 0).toInt() < MUSIC_RELEASE)
     {
-        QString musicSrcDir = QApplication::applicationDirPath() + "/";
-
-        ppLogTrace("unzipBoosterMusicBooks resourceDir1 %s", qPrintable(musicSrcDir));
-
-        if (!QFile::exists(musicSrcDir + ZIPFILENAME))
-        {
-#if defined (Q_OS_LINUX) || defined (Q_OS_UNIX)
-            musicSrcDir=Util::dataDir()+"/music/";
-#endif
-#ifdef Q_OS_DARWIN
-            musicSrcDir = QApplication::applicationDirPath() + "/../Resources/music/";
-#endif
+        auto musicSrcDir = QCoreApplication::applicationDirPath() + QChar('/');
+        if (!QFile::exists(musicSrcDir + ZIPFILENAME)) {
+            musicSrcDir = Util::dataDir(QStringLiteral("music"));
         }
-
-        ppLogInfo(qPrintable("applicationDirPath=" + QApplication::applicationDirPath()));
         ppLogTrace("resourceDir %s", qPrintable(musicSrcDir));
 
         QFileInfo zipFile(musicSrcDir +  ZIPFILENAME);

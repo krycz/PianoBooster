@@ -836,17 +836,7 @@ void QtWindow::refreshTranslate(){
         }
     }
 
-    QString translationsDir = QApplication::applicationDirPath() + "/translations/";
-
-    QFile fileTestLocale(translationsDir);
-    if (!fileTestLocale.exists()){
- #if defined (Q_OS_LINUX) || defined (Q_OS_UNIX)
-        translationsDir=Util::dataDir()+"/translations/";
- #endif
- #ifdef Q_OS_DARWIN
-        translationsDir=QApplication::applicationDirPath() + "/../Resources/translations/";
- #endif
-    }
+    const auto translationsDir = Util::dataDir(QStringLiteral("translations"));
     ppLogInfo("Translations loaded from '%s'",  qPrintable(translationsDir));
 
     // set translator for app

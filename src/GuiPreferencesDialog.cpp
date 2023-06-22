@@ -50,21 +50,11 @@ GuiPreferencesDialog::GuiPreferencesDialog(QWidget *parent)
 void GuiPreferencesDialog::initLanguageCombo(){
 #ifndef NO_LANGS
 
-    QString localeDirectory = QApplication::applicationDirPath() + "/translations/";
-
-    QFile fileTestLocale(localeDirectory);
-    if (!fileTestLocale.exists()){
-        localeDirectory=Util::dataDir()+"/translations/";
- #ifdef Q_OS_DARWIN
-        localeDirectory=QApplication::applicationDirPath() + "/../Resources/translations/";
- #endif
-    }
-
     // read langs.json
     QJsonObject rootLangs;
-    QFile file;
-    file.setFileName(localeDirectory+"/langs.json");
-    if (!file.open(QIODevice::ReadOnly | QIODevice::Text)){
+    const auto localeDirectory = Util::dataDir(QStringLiteral("translations"));
+    auto file = QFile(localeDirectory + QStringLiteral("/langs.json"));
+    if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
         ppLogError("Error while opening langs.json");
         return;
     }else{

@@ -92,7 +92,7 @@ void benchMarkResults();
 
 class Util {
 public:
-    static QString dataDir();
+    static QString dataDir(const QString &subDir);
 };
 
 #endif //__UTIL_H__
