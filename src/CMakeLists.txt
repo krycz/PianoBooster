@@ -118,7 +118,7 @@ if (NOT DATA_DIR)
     set(DATA_DIR "share/games/pianobooster")
 endif ()
 add_compile_options("-DDATA_DIR=\"${DATA_DIR}\"")
-set(CMAKE_INSTALL_DATAROOTDIR "${CMAKE_INSTALL_DATAROOTDIR}/games")  # used by c++/qtutilities
+set(CMAKE_INSTALL_DATAROOTDIR "share/games")  # used by c++/qtutilities
 
 # apply basic configuration
 include(BasicConfig)
