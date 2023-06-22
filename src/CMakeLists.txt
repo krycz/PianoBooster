@@ -175,7 +175,7 @@ list(
     OpenGL
     Xml)
 if (QT_PACKAGE_PREFIX MATCHES ".*Qt([0-9]+).*")
-    list(APPEND ADDITIONAL_QT_MODULES OpenGLWidgets Core5Compat)
+    list(APPEND ADDITIONAL_QT_MODULES OpenGLWidgets)
 endif ()
 include(QtGuiConfig)
 include(QtConfig)

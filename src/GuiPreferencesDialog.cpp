@@ -28,8 +28,8 @@
 #include <QJsonObject>
 #include <QJsonDocument>
 #include <QJsonValue>
-
-#include <QRegExp> // deprecated, from compat module in Qt 6
+#include <QStringBuilder>
+#include <QRegularExpression>
 
 #include "GuiPreferencesDialog.h"
 #include "GlView.h"
@@ -51,80 +51,71 @@ void GuiPreferencesDialog::initLanguageCombo(){
 #ifndef NO_LANGS
 
     // read langs.json
-    QJsonObject rootLangs;
     const auto localeDirectory = Util::dataDir(QStringLiteral("translations"));
     auto file = QFile(localeDirectory + QStringLiteral("/langs.json"));
     if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
         ppLogError("Error while opening langs.json");
         return;
-    }else{
-        QByteArray val = file.readAll();
-        file.close();
-
-        QJsonDocument document = QJsonDocument::fromJson(val);
-        if (document.isEmpty()){
-            ppLogError("langs.json is not valid");
-            return;
-        }else{
-            rootLangs = document.object();
-        }
+    }
+    const auto document = QJsonDocument::fromJson(file.readAll());
+    file.close();
+    if (document.isEmpty()) {
+        ppLogError("langs.json is not valid");
+        return;
     }
 
-    // loading languages
+    // load languages
+    const auto rootLangs = document.object();
     languageCombo->clear();
-    languageCombo->addItem("<"+tr("System Language")+">","");
-    languageCombo->addItem("English","en");
-    if (m_settings->value("General/lang","").toString()=="en"){
-        languageCombo->setCurrentIndex(languageCombo->count()-1);
+    languageCombo->addItem(QString(QChar('<') % tr("System Language") % QChar('>')), QString());
+    languageCombo->addItem(QStringLiteral("English"), QStringLiteral("en"));
+    if (m_settings->value(QStringLiteral("General/lang"), QString()).toString() == QLatin1String("en")){
+        languageCombo->setCurrentIndex(languageCombo->count() - 1);
     }
 
-    QDir dirLang(localeDirectory);
+    auto dirLang = QDir(localeDirectory);
     dirLang.setFilter(QDir::Files | QDir::Hidden | QDir::NoDotAndDotDot);
-    QFileInfoList listLang = dirLang.entryInfoList();
+    const auto listLang = QFileInfoList(dirLang.entryInfoList());
+    static const auto rx = QRegularExpression(QStringLiteral("(pianobooster_)(.*)(.qm)"));
     for (const QFileInfo &fileInfo : listLang) {
+        const auto match = rx.match(fileInfo.fileName());
+        if (!match.hasMatch()) {
+            continue;
+        }
+        const auto langCode = match.captured(2);
+        if (langCode == QLatin1String("blank")) {
+            continue;
+        }
+        auto langCodeLoc = langCode;
+        if (langCodeLoc.indexOf(QChar('_')) == -1) {
+            langCodeLoc += QChar('_') + langCodeLoc.toUpper();
+        }
 
-        QRegExp rx("(pianobooster_)(.*)(.qm)");
-        if (rx.indexIn(fileInfo.fileName())!=-1){
-            QString lang_code = rx.cap(2);
-
-            if (lang_code=="blank") continue;
-
-            QString lang_code_loc = lang_code;
-            if (lang_code_loc.indexOf("_")==-1) lang_code_loc+="_"+lang_code_loc.toUpper();
-
-            QString languageName = "";
-
-            if (rootLangs.value(lang_code).toObject().value("nativeName").isString()){
-                languageName = rootLangs.value(lang_code).toObject().value("nativeName").toString();
-            }
-
+        auto languageName = QString();
+        if (rootLangs.value(langCode).toObject().value(QLatin1String("nativeName")).isString()) {
+            languageName = rootLangs.value(langCode).toObject().value(QLatin1String("nativeName")).toString();
+        }
+        if (languageName.isEmpty()){
+            auto loc = QLocale(langCodeLoc);
+            languageName = loc.nativeLanguageName();
             if (languageName.isEmpty()){
-                QLocale loc(lang_code_loc);
-                languageName = loc.nativeLanguageName();
-
-                if (languageName.isEmpty()){
-                    languageName=QLocale::languageToString(loc.language());
-                }
-
-            }
-
-            languageName[0]=languageName[0].toUpper();
-
-            if (languageName.isEmpty() || languageName=="C"){
-                    languageName=lang_code;
-            }
-
-            languageCombo->addItem(languageName,lang_code);
-            if (m_settings->value("General/lang","").toString()==lang_code){
-                languageCombo->setCurrentIndex(languageCombo->count()-1);
+                languageName = QLocale::languageToString(loc.language());
             }
         }
-    }
+        languageName[0] = languageName[0].toUpper();
+        if (languageName.isEmpty() || languageName == QChar('C')) {
+            languageName=langCode;
+        }
 
+        languageCombo->addItem(languageName,langCode);
+        if (m_settings->value(QStringLiteral("General/lang"), QString()).toString() == langCode){
+            languageCombo->setCurrentIndex(languageCombo->count() - 1);
+        }
+    }
 #else
     // loading languages
     languageCombo->clear();
-    languageCombo->addItem("English","en");
+    languageCombo->addItem(QStringLiteral("English"), QStringLiteral("en"));
     languageCombo->setCurrentIndex(0);
 #endif
 }
