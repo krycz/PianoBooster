@@ -26,6 +26,8 @@
 */
 /*********************************************************************************/
 
+#include <qtutilities/misc/compat.h>
+
 #include <fstream>
 #include <sstream>
 
@@ -312,7 +314,7 @@ void benchMarkResults()
 // Returns the location of where the data is stored
 // for an AppImage the dataDir is must be relative to the applicationDirPath
 QString Util::dataDir() {
-    QString appImagePath = qgetenv("APPIMAGE");
+    const auto appImagePath = qEnvironmentVariable("APPIMAGE");
 
     if (appImagePath.isEmpty() )
         return QString(PREFIX)+"/"+QString(DATA_DIR);
