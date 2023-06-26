@@ -163,7 +163,7 @@ endif (USE_FTGL)
 if (NO_LANGS)
     add_compile_options("-DNO_LANGS")
 else ()
-    add_subdirectory(../translations ../build/translations)
+    add_subdirectory(../translations ../build/translations-subdir)
 endif ()
 
 # find Qt libraries

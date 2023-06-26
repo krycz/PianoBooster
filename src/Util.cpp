@@ -319,6 +319,9 @@ QString Util::dataDir(const QString &subDir) {
     if (const auto nextToBin = QString(appDirPath % QChar('/') % subDir); QFile::exists(nextToBin)) {
         return nextToBin;
     }
+    if (const auto builtIn = QStringLiteral(":/") + subDir; QFile::exists(builtIn)) {
+        return builtIn;
+    }
 #ifdef Q_OS_DARWIN
     return appDirPath % QStringLiteral("/../Resources/") % subDir;
 #else
