@@ -314,7 +314,7 @@ void CDraw::drawNoteName(int midiNote, float x, float y, int type)
 
     if(0<item.pianoNote && item.pianoNote < 8)
      {
-      QString accident = QString("");
+      auto accident = QString();
       switch(item.accidental)
        {
         case -1:

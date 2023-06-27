@@ -165,8 +165,8 @@ void GuiTopBar::setPlayButtonState(bool checked, bool atTheEnd)
     if (checked)
     {
         playButton->setIcon(QIcon(QStringLiteral(":/images/breeze/media-playback-stop.svg")));
-        playButton->setToolTip("");
-        playFromStartButton->setToolTip("");
+        playButton->setToolTip(QString());
+        playFromStartButton->setToolTip(QString());
     }
     else
     {

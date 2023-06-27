@@ -149,7 +149,7 @@ public:
     void updateWarningMessages();
 
     QString selectedLangauge() {
-        QString locale = value("General/lang","").toString();
+        auto locale = value(QStringLiteral("General/lang"), QString()).toString();
         if (locale.isEmpty()) {
             locale = QLocale::system().bcp47Name();
             int n = locale.indexOf("_");
