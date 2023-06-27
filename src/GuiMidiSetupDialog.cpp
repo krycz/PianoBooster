@@ -257,11 +257,11 @@ void GuiMidiSetupDialog::accept()
 
 void GuiMidiSetupDialog::updateFluidInfoStatus()
 {
-    QStringList soundFontNames = m_settings->getFluidSoundFontNames();
+    const auto soundFontNames = m_settings->getFluidSoundFontNames();
     soundFontList->clear();
-    if (!m_settings->getFluidSoundFontNames().isEmpty())
+    if (!soundFontNames.isEmpty())
     {
-        QFileInfo fileInfo = QFileInfo(m_settings->getFluidSoundFontNames().at(0));
+        const auto fileInfo = QFileInfo(soundFontNames.first());
         if (fileInfo.exists())
         {
             soundFontList->addItem(fileInfo.fileName());
