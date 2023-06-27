@@ -95,6 +95,29 @@ set(WIDGETS_UI_FILES
     GuiLoopingPopup.ui)
 set(CMAKE_MODULE_FILES ../CMakeLists.txt ../translations/CMakeLists.txt)
 set(WINDOWS_ICON_PATH "${CMAKE_CURRENT_SOURCE_DIR}/images/pianobooster.ico")
+set(REQUIRED_ICONS
+    application-exit
+    color-profile
+    dialog-cancel
+    dialog-ok
+    dialog-ok-apply
+    document-open
+    edit-clear
+    globe
+    help-about-symbolic
+    help-hint
+    help-keybord-shortcuts
+    music-note-16th
+    preferences-desktop-icons
+    preferences-desktop-locale
+    qtcreator
+    system-file-manager
+    system-run
+    system-search
+    view-fullscreen
+    view-left-pane-symbolic
+    window-close
+)
 
 option(WITH_INTERNAL_FLUIDSYNTH "Build with an internal FluidSynth sound generator" ON)
 option(USE_FTGL "Build with ftgl for notes localization" ON)

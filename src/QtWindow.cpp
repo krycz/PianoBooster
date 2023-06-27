@@ -326,21 +326,21 @@ void QtWindow::addShortcutAction(const QString & key, const char * method)
 
 void QtWindow::createActions()
 {
-    m_openAct = new QAction(QIcon(QStringLiteral(":/images/breeze/document-open.svg")), tr("&Open..."), this);
+    m_openAct = new QAction(QIcon::fromTheme(QStringLiteral("document-open"), QIcon(QStringLiteral(":/images/breeze/document-open.svg"))), tr("&Open..."), this);
     m_openAct->setShortcut(tr("Ctrl+O"));
     m_openAct->setToolTip(tr("Open an existing file"));
     connect(m_openAct, SIGNAL(triggered()), this, SLOT(open()));
 
-    m_exitAct = new QAction(tr("E&xit"), this);
+    m_exitAct = new QAction(QIcon::fromTheme(QStringLiteral("application-exit")), tr("E&xit"), this);
     m_exitAct->setShortcut(tr("Ctrl+Q"));
     m_exitAct->setToolTip(tr("Exit the application"));
     connect(m_exitAct, SIGNAL(triggered()), this, SLOT(close()));
 
-    m_aboutAct = new QAction(tr("&About"), this);
+    m_aboutAct = new QAction(QIcon::fromTheme(QStringLiteral("help-about-symbolic")), tr("&About"), this);
     m_aboutAct->setToolTip(tr("Show the application's About box"));
     connect(m_aboutAct, SIGNAL(triggered()), this, SLOT(about()));
 
-    m_shortcutAct = new QAction(tr("&PC Shortcut Keys"), this);
+    m_shortcutAct = new QAction(QIcon::fromTheme(QStringLiteral("help-keybord-shortcuts")), tr("&PC Shortcut Keys"), this);
     m_shortcutAct->setToolTip(tr("The PC Keyboard shortcut keys"));
     connect(m_shortcutAct, SIGNAL(triggered()), this, SLOT(keyboardShortcuts()));
 
@@ -354,13 +354,13 @@ void QtWindow::createActions()
     m_setupKeyboardAct->setToolTip(tr("Change the piano keyboard settings"));
     connect(m_setupKeyboardAct, SIGNAL(triggered()), this, SLOT(showKeyboardSetup()));
 
-    m_fullScreenStateAct = new QAction(tr("&Fullscreen"), this);
+    m_fullScreenStateAct = new QAction(QIcon::fromTheme(QStringLiteral("view-fullscreen")), tr("&Fullscreen"), this);
     m_fullScreenStateAct->setToolTip(tr("Fullscreen mode"));
     m_fullScreenStateAct->setShortcut(tr("F11"));
     m_fullScreenStateAct->setCheckable(true);
     connect(m_fullScreenStateAct, SIGNAL(triggered()), this, SLOT(onFullScreenStateAct()));
 
-    m_sidePanelStateAct = new QAction(tr("&Show the Side Panel"), this);
+    m_sidePanelStateAct = new QAction(QIcon::fromTheme(QStringLiteral("view-left-pane-symbolic")), tr("&Show the Side Panel"), this);
     m_sidePanelStateAct->setToolTip(tr("Show the Left Side Panel"));
     m_sidePanelStateAct->setShortcut(tr("F12"));
     m_sidePanelStateAct->setCheckable(true);
@@ -389,6 +389,7 @@ void QtWindow::createActions()
     m_songDetailsAct = new QAction(tr("Song &Details ..."), this);
     m_songDetailsAct->setToolTip(tr("Song Settings"));
     m_songDetailsAct->setShortcut(tr("Ctrl+D"));
+    m_songDetailsAct->setIcon(QIcon::fromTheme(QStringLiteral("music-note-16th")));
     connect(m_songDetailsAct, SIGNAL(triggered()), this, SLOT(showSongDetailsDialog()));
 
     QAction* act = new QAction(this);
@@ -438,6 +439,7 @@ void QtWindow::createMenus()
     m_colorThemeActGrp->setExclusive(true);
     m_colorThemeMenu->addAction(tr("Default"))->setActionGroup(m_colorThemeActGrp);
     m_colorThemeMenu->addAction(tr("Light"))->setActionGroup(m_colorThemeActGrp);
+    m_colorThemeMenu->setIcon(QIcon::fromTheme(QStringLiteral("color-profile")));
     const auto &actions = m_colorThemeActGrp->actions();
     for (auto *const action : actions) {
         action->setCheckable(true);
@@ -475,11 +477,13 @@ void QtWindow::createMenus()
     QAction* act;
     act = new QAction(tr("&Help"), this);
     act->setToolTip(tr("Piano Booster Help"));
+    act->setIcon(QIcon::fromTheme(QStringLiteral("help-hint")));
     connect(act, SIGNAL(triggered()), this, SLOT(help()));
     m_helpMenu->addAction(act);
 
     act = new QAction(tr("&Website"), this);
     act->setToolTip(tr("Piano Booster Website"));
+    act->setIcon(QIcon::fromTheme(QStringLiteral("globe")));
     connect(act, SIGNAL(triggered()), this, SLOT(website()));
     m_helpMenu->addAction(act);
 
