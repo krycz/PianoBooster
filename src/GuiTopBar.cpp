@@ -164,13 +164,13 @@ void GuiTopBar::setPlayButtonState(bool checked, bool atTheEnd)
     playButton->setChecked(checked);
     if (checked)
     {
-        playButton->setIcon(QIcon(":/images/stop.png"));
+        playButton->setIcon(QIcon(QStringLiteral(":/images/breeze/media-playback-stop.svg")));
         playButton->setToolTip("");
         playFromStartButton->setToolTip("");
     }
     else
     {
-        playButton->setIcon(QIcon(":/images/play.png"));
+        playButton->setIcon(QIcon(QStringLiteral(":/images/breeze/media-playback-start.svg")));
         playButton->setToolTip(tr("Start and stop playing music"));
         playFromStartButton->setToolTip(tr("Playing music from the beginning"));
     }

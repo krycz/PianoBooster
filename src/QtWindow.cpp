@@ -326,7 +326,7 @@ void QtWindow::addShortcutAction(const QString & key, const char * method)
 
 void QtWindow::createActions()
 {
-    m_openAct = new QAction(QIcon(":/images/open.png"), tr("&Open..."), this);
+    m_openAct = new QAction(QIcon(QStringLiteral(":/images/breeze/document-open.svg")), tr("&Open..."), this);
     m_openAct->setShortcut(tr("Ctrl+O"));
     m_openAct->setToolTip(tr("Open an existing file"));
     connect(m_openAct, SIGNAL(triggered()), this, SLOT(open()));
@@ -641,12 +641,15 @@ void QtWindow::about()
             tr("This program is made available "
                 "under the terms of the GNU General Public License version 3 as published by "
                 "the Free Software Foundation.<br><br>"
-            )
+            ) %
             #ifdef USE_BUNDLED_RTMIDI
-             %
             tr("This program also contains RtMIDI: realtime MIDI i/o C++ classes<br>") %
-            tr("Copyright(c) Gary P. Scavone, 2003-2019; All rights reserved.")
+            tr("Copyright(c) Gary P. Scavone, 2003-2019; All rights reserved.") %
+            QStringLiteral("<br><br>") %
             #endif
+            tr("Fallback icons from <a href=\"https://invent.kde.org/frameworks/breeze-icons\">KDE/Breeze</a> "
+               "project (copyright © 2014 Uri Herrera <uri_herrera@nitrux.in> and others, see the according %1)").arg(
+               QStringLiteral("<a href=\"" APP_URL "/blob/custom/LICENSE.LESSER\">LGPL-3.0 license</a>"))
     );
     msgBox.setMinimumWidth(600);
     msgBox.exec();
