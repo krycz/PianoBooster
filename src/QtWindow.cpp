@@ -31,6 +31,7 @@
 #include <qtutilities/settingsdialog/optioncategorymodel.h>
 #include <qtutilities/settingsdialog/qtsettings.h>
 #include <qtutilities/settingsdialog/settingsdialog.h>
+#include <qtutilities/resources/resources.h>
 
 #include <QDebug>
 #include <QSurfaceFormat>
@@ -810,14 +811,8 @@ void QtWindow::loadTutorHtml(const QString & name)
 
 }
 
-void QtWindow::refreshTranslate(){
+void QtWindow::refreshTranslate() {
 #ifndef NO_LANGS
-    QString locale = m_settings->selectedLangauge();
-
-    qApp->removeTranslator(&translator);
-    qApp->removeTranslator(&translatorMusic);
-    qApp->removeTranslator(&qtTranslator);
-
     // save original
     if (listWidgetsRetranslateUi.size()==0){
         QList<QWidget*> l2 = this->findChildren<QWidget *>();
@@ -841,34 +836,14 @@ void QtWindow::refreshTranslate(){
         }
     }
 
-    const auto translationsDir = Util::dataDir(QStringLiteral("translations"));
-    ppLogInfo("Translations loaded from '%s'",  qPrintable(translationsDir));
-
-    // set translator for app
-    auto ok = true;
-    if (!translator.load(QSTR_APPNAME + QString("_") + locale , translationsDir))
-        ok = ok & translator.load(QSTR_APPNAME + QString("_") + locale, QApplication::applicationDirPath());
-    qApp->installTranslator(&translator);
-
-    // set translator for music
-    if (!translatorMusic.load(QString("music_") + locale , translationsDir))
-       if (!translatorMusic.load(QString("music_") + locale, QApplication::applicationDirPath()  + "/translations/"))
-           ok = ok & translatorMusic.load(QString("music_") + locale, QApplication::applicationDirPath());
-    qApp->installTranslator(&translatorMusic);
-
-    // set translator for default widget's text (for example: QMessageBox's buttons)
-#ifdef __WIN32
-    ok = ok & qtTranslator.load("qt_"+locale, translationsDir);
-#elif QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
-    ok = ok & qtTranslator.load("qt_"+locale, QLibraryInfo::path(QLibraryInfo::TranslationsPath));
-#else
-    ok = ok & qtTranslator.load("qt_"+locale, QLibraryInfo::location(QLibraryInfo::TranslationsPath));
-#endif
-    qApp->installTranslator(&qtTranslator);
-
-    if (!ok) {
-        qDebug() << "Unable to load all translations";
-    }
+    static const auto &translationsDir = [] {
+        return QtUtilities::TranslationFiles::additionalTranslationFilePath() = Util::dataDir(QStringLiteral("translations"));
+    }();
+    const auto locale = m_settings->selectedLangauge();
+    QtUtilities::TranslationFiles::clearTranslationFiles();
+    QtUtilities::TranslationFiles::loadApplicationTranslationFile(QString(), QSTR_APPNAME, locale);
+    QtUtilities::TranslationFiles::loadApplicationTranslationFile(QString(), QStringLiteral("music"), locale);
+    QtUtilities::TranslationFiles::loadQtTranslationFile({QStringLiteral("qtbase")}, locale);
 
     // retranslate UI
     QList<QWidget*> l2 = this->findChildren<QWidget *>();

@@ -207,10 +207,6 @@ private:
     GuiTopBar *m_topBar;
     QTextBrowser *m_tutorWindow;
 
-    QTranslator translator;
-    QTranslator translatorMusic;
-    QTranslator qtTranslator;
-
     QMap<QWidget*,QMap<QString,QString>> listWidgetsRetranslateUi;
     QMap<QAction*,QMap<QString,QString>> listActionsRetranslateUi;
 
