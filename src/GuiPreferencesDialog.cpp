@@ -24,7 +24,8 @@
 
 */
 
-#include <QtWidgets>
+#include <QDir>
+#include <QFontInfo>
 #include <QJsonObject>
 #include <QJsonDocument>
 #include <QJsonValue>
@@ -34,20 +35,21 @@
 #include "GuiPreferencesDialog.h"
 #include "GlView.h"
 
-GuiPreferencesDialog::GuiPreferencesDialog(QWidget *parent)
-    : QDialog(parent)
+#include "ui_GuiPreferencesDialog.h"
+
+GuiPreferencesOptionPage::GuiPreferencesOptionPage(QObject *parent)
+    : QObject(parent)
+    , m_settings(nullptr)
+    , m_song(nullptr)
+    , m_glView(nullptr)
 {
-    setupUi(this);
-    m_song = nullptr;
-    m_settings = nullptr;
-    m_glView = nullptr;
-    setWindowTitle(tr("Preferences"));
-    followStopPointCombo->addItem(tr("Automatic (Recommended)"));
-    followStopPointCombo->addItem(tr("On the Beat"));
-    followStopPointCombo->addItem(tr("After the Beat"));
 }
 
-void GuiPreferencesDialog::initLanguageCombo(){
+GuiPreferencesOptionPage::~GuiPreferencesOptionPage()
+{
+}
+
+void GuiPreferencesOptionPage::initLanguageCombo() {
 #ifndef NO_LANGS
 
     // read langs.json
@@ -66,11 +68,11 @@ void GuiPreferencesDialog::initLanguageCombo(){
 
     // load languages
     const auto rootLangs = document.object();
-    languageCombo->clear();
-    languageCombo->addItem(QString(QChar('<') % tr("System Language") % QChar('>')), QString());
-    languageCombo->addItem(QStringLiteral("English"), QStringLiteral("en"));
+    ui()->languageCombo->clear();
+    ui()->languageCombo->addItem(QString(QChar('<') % tr("System Language") % QChar('>')), QString());
+    ui()->languageCombo->addItem(QStringLiteral("English"), QStringLiteral("en"));
     if (m_settings->value(QStringLiteral("General/lang"), QString()).toString() == QLatin1String("en")){
-        languageCombo->setCurrentIndex(languageCombo->count() - 1);
+        ui()->languageCombo->setCurrentIndex(ui()->languageCombo->count() - 1);
     }
 
     auto dirLang = QDir(localeDirectory);
@@ -107,9 +109,9 @@ void GuiPreferencesDialog::initLanguageCombo(){
             languageName=langCode;
         }
 
-        languageCombo->addItem(languageName,langCode);
+        ui()->languageCombo->addItem(languageName, langCode);
         if (m_settings->value(QStringLiteral("General/lang"), QString()).toString() == langCode){
-            languageCombo->setCurrentIndex(languageCombo->count() - 1);
+            ui()->languageCombo->setCurrentIndex(ui()->languageCombo->count() - 1);
         }
     }
 #else
@@ -120,39 +122,46 @@ void GuiPreferencesDialog::initLanguageCombo(){
 #endif
 }
 
-void GuiPreferencesDialog::init(CSong* song, CSettings* settings, CGLView * glView)
+void GuiPreferencesOptionPage::init(CSong* song, CSettings* settings, CGLView * glView)
 {
     m_song = song;
     m_settings = settings;
     m_glView = glView;
-
-    timingMarkersCheck->setChecked(m_song->cfg_timingMarkersFlag);
-    showNoteNamesCheck->setChecked(m_settings->isNoteNamesEnabled());
-    courtesyAccidentalsCheck->setChecked(m_settings->displayCourtesyAccidentals());
-    showTutorPagesCheck->setChecked(m_settings->isTutorPagesEnabled());
-    followThroughErrorsCheck->setChecked(m_settings->isFollowThroughErrorsEnabled());
-    showColoredNotesCheck->setChecked(m_settings->isColoredNotesEnabled());
-
-    followStopPointCombo->setCurrentIndex(m_song->cfg_stopPointMode);
-
-    initLanguageCombo();
 }
 
-void GuiPreferencesDialog::accept()
+bool GuiPreferencesOptionPage::apply()
 {
-    m_song->cfg_timingMarkersFlag = timingMarkersCheck->isChecked();
+    m_song->cfg_timingMarkersFlag = ui()->timingMarkersCheck->isChecked();
     m_settings->setValue("Score/TimingMarkers", m_song->cfg_timingMarkersFlag );
-    m_settings->setNoteNamesEnabled( showNoteNamesCheck->isChecked());
-    m_settings->setCourtesyAccidentals( courtesyAccidentalsCheck->isChecked());
-    m_settings->setTutorPagesEnabled( showTutorPagesCheck->isChecked());
-    m_settings->setFollowThroughErrorsEnabled( followThroughErrorsCheck->isChecked());
-    m_settings->setColoredNotes( showColoredNotesCheck->isChecked());
-    m_song->cfg_stopPointMode = static_cast<stopPointMode_t> (followStopPointCombo->currentIndex());
+    m_settings->setNoteNamesEnabled( ui()->showNoteNamesCheck->isChecked());
+    m_settings->setCourtesyAccidentals( ui()->courtesyAccidentalsCheck->isChecked());
+    m_settings->setTutorPagesEnabled( ui()->showTutorPagesCheck->isChecked());
+    m_settings->setFollowThroughErrorsEnabled( ui()->followThroughErrorsCheck->isChecked());
+    m_settings->setColoredNotes( ui()->showColoredNotesCheck->isChecked());
+    m_song->cfg_stopPointMode = static_cast<stopPointMode_t>(ui()->followStopPointCombo->currentIndex());
     m_settings->setValue("Score/StopPointMode", m_song->cfg_stopPointMode );
-
-    m_settings->setValue("General/lang", languageCombo->currentData().toString());
-
+    m_settings->setValue("General/lang", ui()->languageCombo->currentData().toString());
     m_song->refreshScroll();
+    return true;
+}
 
-    this->QDialog::accept();
+void GuiPreferencesOptionPage::reset()
+{
+    ui()->timingMarkersCheck->setChecked(m_song->cfg_timingMarkersFlag);
+    ui()->showNoteNamesCheck->setChecked(m_settings->isNoteNamesEnabled());
+    ui()->courtesyAccidentalsCheck->setChecked(m_settings->displayCourtesyAccidentals());
+    ui()->showTutorPagesCheck->setChecked(m_settings->isTutorPagesEnabled());
+    ui()->followThroughErrorsCheck->setChecked(m_settings->isFollowThroughErrorsEnabled());
+    ui()->showColoredNotesCheck->setChecked(m_settings->isColoredNotesEnabled());
+    ui()->followStopPointCombo->setCurrentIndex(m_song->cfg_stopPointMode);
+}
+
+QWidget *GuiPreferencesOptionPage::setupWidget()
+{
+    auto *widget = GuiPreferencesOptionPageBase::setupWidget();
+    ui()->followStopPointCombo->addItem(tr("Automatic (Recommended)"));
+    ui()->followStopPointCombo->addItem(tr("On the Beat"));
+    ui()->followStopPointCombo->addItem(tr("After the Beat"));
+    initLanguageCombo();
+    return widget;
 }

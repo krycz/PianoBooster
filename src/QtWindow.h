@@ -93,16 +93,6 @@ private slots:
 
     void showMidiSetup();
 
-    void showPreferencesDialog()
-    {
-        GuiPreferencesDialog preferencesDialog(this);
-        preferencesDialog.init(m_song, m_settings, m_glWidget);
-        preferencesDialog.exec();
-
-        refreshTranslate();
-        m_score->refreshScroll();
-    }
-
     void showSongDetailsDialog()
     {
         GuiSongDetailsDialog songDetailsDialog(this);
@@ -221,7 +211,6 @@ private:
     QAction *m_sidePanelStateAct;
     QAction *m_viewPianoKeyboard;
     QAction *m_fullScreenStateAct;
-    QAction *m_setupPreferencesAct;
     QAction *m_setupUISettingsAct;
     QAction *m_songDetailsAct;
 

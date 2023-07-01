@@ -29,26 +29,28 @@
 #ifndef __GUIPREFERENCESDIALOG_H__
 #define __GUIPREFERENCESDIALOG_H__
 
-#include <QtWidgets>
+#include <qtutilities/settingsdialog/optionpage.h>
 
 #include "Song.h"
 #include "Settings.h"
 
-#include "ui_GuiPreferencesDialog.h"
-
 class CGLView;
 
-class GuiPreferencesDialog : public QDialog, private Ui::GuiPreferencesDialog
-{
+class Ui_GuiPreferencesDialog;
+
+using GuiPreferencesOptionPageBase = ::QtUtilities::UiFileBasedOptionPage<Ui_GuiPreferencesDialog>;
+class GuiPreferencesOptionPage : public QObject, public GuiPreferencesOptionPageBase {
     Q_OBJECT
 
 public:
-    GuiPreferencesDialog(QWidget *parent = 0);
-
+    explicit GuiPreferencesOptionPage(QObject *parent = nullptr);
+    ~GuiPreferencesOptionPage();
     void init(CSong* song, CSettings* settings, CGLView* glView);
+    bool apply() override;
+    void reset() override;
 
-private slots:
-    void accept();
+protected:                                                                                                                                           \
+    QWidget *setupWidget() override;
 
 private:
     void initLanguageCombo();

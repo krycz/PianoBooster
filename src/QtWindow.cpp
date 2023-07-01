@@ -378,11 +378,6 @@ void QtWindow::createActions()
     }
     connect(m_viewPianoKeyboard, SIGNAL(triggered()), this, SLOT(onViewPianoKeyboard()));
 
-    m_setupPreferencesAct = new QAction(tr("&Preferences ..."), this);
-    m_setupPreferencesAct->setToolTip(tr("Settings"));
-    m_setupPreferencesAct->setShortcut(tr("Ctrl+P"));
-    connect(m_setupPreferencesAct, SIGNAL(triggered()), this, SLOT(showPreferencesDialog()));
-
     m_setupUISettingsAct = new QAction(tr("&UI settings ..."), this);
     m_setupUISettingsAct->setToolTip(tr("UI-related settings"));
     m_setupUISettingsAct->setShortcut(tr("Ctrl+U"));
@@ -468,7 +463,6 @@ void QtWindow::createMenus()
     m_setupMenu->setToolTipsVisible(true);
     m_setupMenu->addAction(m_setupMidiAct);
     m_setupMenu->addAction(m_setupKeyboardAct);
-    m_setupMenu->addAction(m_setupPreferencesAct);
     if (m_qtSettings) {
         m_setupMenu->addAction(m_setupUISettingsAct);
     }
@@ -523,19 +517,24 @@ void QtWindow::showMidiSetup(){
 void QtWindow::showUISettingsDialog()
 {
     if (!m_settingsDlg) {
-         m_settingsDlg = new QtUtilities::SettingsDialog(this);
-         if (m_qtSettings) {
-            m_settingsDlg->setWindowTitle(tr("UI settings"));
-            auto *const category = new QtUtilities::OptionCategory;
-            category->setDisplayName(QCoreApplication::translate("QtGui::QtOptionCategory", "UI settings"));
-            category->assignPages({ new QtUtilities::QtAppearanceOptionPage(*m_qtSettings) });
-            m_settingsDlg->setSingleCategory(category);
-            connect(m_settingsDlg, &QtUtilities::SettingsDialog::applied, this, [this] {
+        m_settingsDlg = new QtUtilities::SettingsDialog(this);
+        m_settingsDlg->setWindowTitle(tr("UI settings"));
+        auto *const category = new QtUtilities::OptionCategory;
+        auto *const preferencesPage = new GuiPreferencesOptionPage;
+        preferencesPage->init(m_song, m_settings, m_glWidget);
+        auto pages = QList<QtUtilities::OptionPage *>({preferencesPage});
+        if (m_qtSettings) {
+            pages << new QtUtilities::QtAppearanceOptionPage(*m_qtSettings);
+        }
+        category->assignPages(pages);
+        m_settingsDlg->setSingleCategory(category);
+        connect(m_settingsDlg, &QtUtilities::SettingsDialog::applied, this, [this] {
+            if (m_qtSettings) {
                 m_qtSettings->apply();
                 m_qtSettings->save(*m_settings);
-            });
-
-         }
+            }
+            refreshTranslate();
+        });
     }
     if (m_settingsDlg->isHidden()) {
          m_settingsDlg->showNormal();
@@ -871,6 +870,5 @@ void QtWindow::refreshTranslate() {
     m_topBar->updateTranslate();
     m_settings->updateWarningMessages();
     m_settings->updateTutorPage();
-
 #endif
 }
