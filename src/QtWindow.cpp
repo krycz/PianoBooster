@@ -846,6 +846,7 @@ void QtWindow::refreshTranslate() {
     const auto locale = m_settings->selectedLangauge();
     QtUtilities::TranslationFiles::clearTranslationFiles();
     QtUtilities::TranslationFiles::loadApplicationTranslationFile(QString(), QSTR_APPNAME, locale);
+    QtUtilities::TranslationFiles::loadApplicationTranslationFile(QString(), QStringLiteral("qtutilities"), QLocale(locale).name());
     QtUtilities::TranslationFiles::loadApplicationTranslationFile(QString(), QStringLiteral("music"), locale);
     QtUtilities::TranslationFiles::loadQtTranslationFile({QStringLiteral("qtbase")}, locale);
 
