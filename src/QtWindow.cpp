@@ -28,6 +28,7 @@
 #include "QtWindow.h"
 #include "resources/config.h"
 
+#include <qtutilities/settingsdialog/optioncategory.h>
 #include <qtutilities/settingsdialog/optioncategorymodel.h>
 #include <qtutilities/settingsdialog/qtsettings.h>
 #include <qtutilities/settingsdialog/settingsdialog.h>
@@ -525,11 +526,15 @@ void QtWindow::showUISettingsDialog()
          m_settingsDlg = new QtUtilities::SettingsDialog(this);
          if (m_qtSettings) {
             m_settingsDlg->setWindowTitle(tr("UI settings"));
-            m_settingsDlg->setSingleCategory(m_qtSettings->category());
+            auto *const category = new QtUtilities::OptionCategory;
+            category->setDisplayName(QCoreApplication::translate("QtGui::QtOptionCategory", "UI settings"));
+            category->assignPages({ new QtUtilities::QtAppearanceOptionPage(*m_qtSettings) });
+            m_settingsDlg->setSingleCategory(category);
             connect(m_settingsDlg, &QtUtilities::SettingsDialog::applied, this, [this] {
                 m_qtSettings->apply();
                 m_qtSettings->save(*m_settings);
             });
+
          }
     }
     if (m_settingsDlg->isHidden()) {
