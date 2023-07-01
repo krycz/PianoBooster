@@ -47,7 +47,7 @@ void CSong::loadSong(const QString & filename)
     CNote::reset();
 
     m_songTitle = filename;
-    int index = m_songTitle.lastIndexOf("/");
+    const auto index = m_songTitle.lastIndexOf(QChar('/'));
     if (index >= 0)
         m_songTitle = m_songTitle.right( m_songTitle.length() - index - 1);
 

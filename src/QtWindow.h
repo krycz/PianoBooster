@@ -48,7 +48,7 @@ class QSlider;
 class QPushButton;
 class QTextBrowser;
 
-static constexpr int maxRecentFiles() { return 20; }
+static constexpr qsizetype maxRecentFiles() { return 20; }
 
 namespace QtUtilities {
 class SettingsDialog;

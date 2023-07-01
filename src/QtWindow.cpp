@@ -184,7 +184,7 @@ void QtWindow::displayUsage()
 
 int QtWindow::decodeIntegerParam(const QString &arg, int defaultParam)
 {
-    int n = arg.lastIndexOf('=');
+    const auto n = arg.lastIndexOf(QChar('='));
     if (n == -1 || (n + 1) >= arg.size())
         return defaultParam;
     bool ok;
@@ -196,7 +196,7 @@ int QtWindow::decodeIntegerParam(const QString &arg, int defaultParam)
 
 bool QtWindow::validateIntegerParam(const QString &arg)
 {
-    int n = arg.lastIndexOf('=');
+    const auto n = arg.lastIndexOf(QChar('='));
     if (n == -1 || (n + 1) >= arg.size())
         return false;
     bool ok;
@@ -541,12 +541,10 @@ void QtWindow::showUISettingsDialog()
 // load the recent file list from the config file into the file menu
 void QtWindow::updateRecentFileActions()
 {
+    const auto files = m_settings->value("RecentFileList").toStringList();
+    const auto numRecentFiles = qMin(files.size(), maxRecentFiles());
 
-    QStringList files = m_settings->value("RecentFileList").toStringList();
-
-    int numRecentFiles = qMin(files.size(), maxRecentFiles());
-
-    for (int i = 0; i < numRecentFiles; ++i) {
+    for (auto i = 0; i < numRecentFiles; ++i) {
         QString text = tr("&%1 %2").arg(i + 1).arg(strippedName(files[i]));
         if (m_recentFileActs[i] == nullptr)
             break;
@@ -555,7 +553,7 @@ void QtWindow::updateRecentFileActions()
         m_recentFileActs[i]->setVisible(true);
     }
 
-    for (int j = numRecentFiles; j < maxRecentFiles(); ++j) {
+    for (auto j = numRecentFiles; j < maxRecentFiles(); ++j) {
         if (m_recentFileActs[j] == nullptr)
             break;
         m_recentFileActs[j]->setVisible(false);

@@ -152,8 +152,8 @@ public:
         auto locale = value(QStringLiteral("General/lang"), QString()).toString();
         if (locale.isEmpty()) {
             locale = QLocale::system().bcp47Name();
-            int n = locale.indexOf("_");
-            if ((n > 0)) {
+            const auto n = locale.indexOf(QChar('_'));
+            if (n > 0) {
                 locale = locale.left(n);
             }
         }
