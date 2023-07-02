@@ -32,6 +32,8 @@
 #include <QStringBuilder>
 #include <QRegularExpression>
 
+#include <functional>
+
 #include "GuiPreferencesDialog.h"
 #include "GlView.h"
 
@@ -158,10 +160,21 @@ void GuiPreferencesOptionPage::reset()
 
 QWidget *GuiPreferencesOptionPage::setupWidget()
 {
-    auto *widget = GuiPreferencesOptionPageBase::setupWidget();
-    ui()->followStopPointCombo->addItem(tr("Automatic (Recommended)"));
-    ui()->followStopPointCombo->addItem(tr("On the Beat"));
-    ui()->followStopPointCombo->addItem(tr("After the Beat"));
+    auto *widget = static_cast<QtUtilities::OptionPageWidget *>(GuiPreferencesOptionPageBase::setupWidget());
+    initFollowStopPointCombo();
     initLanguageCombo();
+    QObject::connect(widget, &QtUtilities::OptionPageWidget::retranslationRequired, widget, std::bind(&GuiPreferencesOptionPage::initFollowStopPointCombo, this));
     return widget;
+}
+
+void GuiPreferencesOptionPage::initFollowStopPointCombo()
+{
+    auto *const combo = ui()->followStopPointCombo;
+    const auto index = combo->currentIndex();
+    combo->clear();
+    combo->addItem(tr("Automatic (Recommended)"));
+    combo->addItem(tr("On the Beat"));
+    combo->addItem(tr("After the Beat"));
+    combo->setCurrentIndex(index);
+
 }

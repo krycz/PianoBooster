@@ -53,6 +53,7 @@ protected:                                                                      
     QWidget *setupWidget() override;
 
 private:
+    void initFollowStopPointCombo();
     void initLanguageCombo();
 
     CSettings* m_settings;
