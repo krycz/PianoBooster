@@ -31,6 +31,8 @@
 #include "Settings.h"
 #include "Notation.h"
 
+#include <QGuiApplication>
+
 #include <array>
 
 typedef unsigned int guint;
@@ -66,7 +68,8 @@ CDraw::CDraw(CSettings* settings)
         ppLogError("Font DejaVuSans.ttf was not found !");
         exit(0);
     }
-    font->FaceSize(FONT_SIZE, FONT_SIZE);
+    static const auto size = static_cast<unsigned int>(FONT_SIZE * qGuiApp->devicePixelRatio());
+    font->FaceSize(size, size);
 #endif
     m_settings = settings;
     m_displayHand = PB_PART_both;
