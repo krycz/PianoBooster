@@ -31,6 +31,8 @@
 #include "Settings.h"
 #include "Notation.h"
 
+#include <array>
+
 typedef unsigned int guint;
 typedef unsigned char guint8;
 
@@ -298,38 +300,23 @@ void CDraw::drawNoteName(int midiNote, float x, float y, int type)
       break;
       }
 #else
-    const QChar flat = QChar(0x266D);
-    const QChar natural = QChar(0x266E);
-    const QChar sharp = QChar(0x266F);
-    const QString n[7] =
-     {
-      tr("C"),
-      tr("D"),
-      tr("E"),
-      tr("F"),
-      tr("G"),
-      tr("A"),
-      tr("B")
-     };
-
-    if(0<item.pianoNote && item.pianoNote < 8)
-     {
-      auto accident = QString();
-      switch(item.accidental)
-       {
+    static const auto flat = QChar(u'♭'), natural = QChar(u'♮'), sharp = QChar(u'♯');
+    const auto n = std::array<QString, 7>{ tr("C"), tr("D"), tr("E"), tr("F"), tr("G"), tr("A"), tr("B") };
+    if (item.pianoNote > 0 && item.pianoNote < 8) {
+        auto note = n[static_cast<std::size_t>(item.pianoNote - 1)];
+        switch (item.accidental) {
         case -1:
-          accident = QString(flat);
-          break;
+            note += flat;
+            break;
         case 1:
-          accident = QString(sharp);
-          break;
+            note += sharp;
+            break;
         case 2:
-          accident = QString(natural);
-          break;
-       }
-      QString note = n[item.pianoNote-1] + accident;
-      renderText(x, y, note.toUtf8().data());
-     }
+            note += natural;
+            break;
+        }
+        renderText(x, y, note.toUtf8().data());
+    }
 #endif
 }
 
