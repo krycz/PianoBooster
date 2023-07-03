@@ -33,6 +33,7 @@
 
 #include <QGuiApplication>
 
+#include <cstdlib>
 #include <array>
 
 typedef unsigned int guint;
@@ -47,26 +48,24 @@ CDraw::CDraw(CSettings* settings)
 #endif
 {
 #ifndef NO_USE_FTGL
-    QStringList listPathFonts;
-
-    listPathFonts.append(Util::dataDir(QStringLiteral("fonts")) + "/DejaVuSans.ttf");
-    listPathFonts.append("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf");
-    listPathFonts.append("/usr/share/fonts/dejavu/DejaVuSans.ttf");
-    listPathFonts.append("/usr/share/fonts/TTF/dejavu/DejaVuSans.ttf");
-    listPathFonts.append("/usr/share/fonts/TTF/DejaVuSans.ttf");
-    listPathFonts.append("/usr/share/fonts/truetype/DejaVuSans.ttf");
-    listPathFonts.append("/usr/local/share/fonts/dejavu/DejaVuSans.ttf");
-
-    for (int i=0;i<listPathFonts.size();i++){
-        QFile file(listPathFonts.at(i));
-        if (file.exists()){
-            font = new FTBitmapFont(listPathFonts.at(i).toStdString().c_str());
+    static const auto fontPaths = std::array<QString, 7>{
+        Util::dataDir(QStringLiteral("fonts")) + QStringLiteral("/DejaVuSans.ttf"),
+        QStringLiteral("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"),
+        QStringLiteral("/usr/share/fonts/dejavu/DejaVuSans.ttf"),
+        QStringLiteral("/usr/share/fonts/TTF/dejavu/DejaVuSans.ttf"),
+        QStringLiteral("/usr/share/fonts/TTF/DejaVuSans.ttf"),
+        QStringLiteral("/usr/share/fonts/truetype/DejaVuSans.ttf"),
+        QStringLiteral("/usr/local/share/fonts/dejavu/DejaVuSans.ttf"),
+    };
+    for (const auto &path : fontPaths) {
+        if (QFile::exists(path)) {
+            font = new FTBitmapFont(path.toUtf8().data());
             break;
         }
     }
-    if (font==nullptr){
-        ppLogError("Font DejaVuSans.ttf was not found !");
-        exit(0);
+    if (!font) {
+        ppLogError("Font DejaVuSans.ttf was not found!");
+        exit(EXIT_FAILURE);
     }
     static const auto size = static_cast<unsigned int>(FONT_SIZE * qGuiApp->devicePixelRatio());
     font->FaceSize(size, size);
