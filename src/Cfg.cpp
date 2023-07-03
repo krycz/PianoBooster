@@ -71,6 +71,7 @@ void ColorTheme::load(BuiltInColorTheme builtInColorTheme)
         playingZoneMiddle  = CColor(0.0f, 0.0f, 0.4f);
         playingZoneBorder  = CColor(0.0f, 0.0f, 0.8f);
         textColor          = CColor(0.0, 0.0, 0.0);     // black
+        timingMarkerColor  = textColor;
         break;
     default:
         *this = ColorTheme();

@@ -788,7 +788,7 @@ void CDraw::drawSymbol(CSymbol symbol, float x, float y, CSlot* slot)
         {
             auto pianistX = static_cast<float>(symbol.getPianistTiming());
             pianistX =  x + pianistX * HORIZONTAL_SPACING_FACTOR;
-            drColor(CColor(1.0, 1.0, 1.0));
+            drColor(colorTheme.timingMarkerColor);
             glLineWidth (2.0f);
             glBegin(GL_LINES);
             glVertex2f( 4.0f + pianistX, 4.0f + y);
