@@ -651,7 +651,7 @@ void QtWindow::about()
             ) %
             #ifdef USE_BUNDLED_RTMIDI
             tr("This program also contains RtMIDI: realtime MIDI i/o C++ classes<br>") %
-            tr("Copyright(c) Gary P. Scavone, 2003-2019; All rights reserved.") %
+            tr("Copyright (c) 2003-2023 Gary P. Scavone") %
             QStringLiteral("<br><br>") %
             #endif
             tr("Fallback icons from <a href=\"https://invent.kde.org/frameworks/breeze-icons\">KDE/Breeze</a> "
