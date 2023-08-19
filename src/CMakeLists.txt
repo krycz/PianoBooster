@@ -273,6 +273,11 @@ if (USE_BUNDLED_RTMIDI)
     include_directories("3rdparty")
     list(APPEND SRC_FILES 3rdparty/rtmidi/RtMidi.cpp)
     list(APPEND HEADER_FILES 3rdparty/rtmidi/RtMidi.h)
+    # don't treat warnings for this 3rdparty code as fatal (even if we'd normally would treat warnings as fatal)
+    set_property(
+        SOURCE 3rdparty/rtmidi/RtMidi.cpp
+        APPEND
+        PROPERTY COMPILE_OPTIONS -Wno-error=conversion -Wno-error=sign-conversion -Wno-error=old-style-cast)
 else ()
     pkg_check_modules(RTMIDI rtmidi)
     if (NOT RTMIDI_FOUND)
