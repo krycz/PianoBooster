@@ -204,6 +204,7 @@ private:
     QAction *m_openAct;
     QAction *m_exitAct;
     QAction *m_aboutAct;
+    QAction *m_aboutQtAct;
     QAction *m_shortcutAct;
     QAction *m_songPlayAct;
     QAction *m_setupMidiAct;

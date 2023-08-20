@@ -34,6 +34,7 @@
 #include <qtutilities/settingsdialog/settingsdialog.h>
 #include <qtutilities/resources/resources.h>
 
+#include <QApplication>
 #include <QDebug>
 #include <QSurfaceFormat>
 #include <QStringBuilder>
@@ -338,9 +339,11 @@ void QtWindow::createActions()
     m_exitAct->setToolTip(tr("Exit the application"));
     connect(m_exitAct, SIGNAL(triggered()), this, SLOT(close()));
 
-    m_aboutAct = new QAction(QIcon::fromTheme(QStringLiteral("help-about-symbolic")), tr("&About"), this);
-    m_aboutAct->setToolTip(tr("Show the application's About box"));
-    connect(m_aboutAct, SIGNAL(triggered()), this, SLOT(about()));
+    m_aboutAct = new QAction(QIcon::fromTheme(QStringLiteral("help-about-symbolic")), tr("&About Piano Booster"), this);
+    m_aboutAct->setToolTip(tr("Show the application's about box"));
+    connect(m_aboutAct, &QAction::triggered, this, &QtWindow::about);
+    m_aboutQtAct = new QAction(QIcon::fromTheme(QStringLiteral("qtcreator")), tr("About Qt"), this);
+    connect(m_aboutQtAct, &QAction::triggered, this, &QApplication::aboutQt);
 
     m_shortcutAct = new QAction(QIcon::fromTheme(QStringLiteral("help-keybord-shortcuts")), tr("&PC Shortcut Keys"), this);
     m_shortcutAct->setToolTip(tr("The PC Keyboard shortcut keys"));
@@ -485,6 +488,7 @@ void QtWindow::createMenus()
 
     m_helpMenu->addAction(m_shortcutAct);
     m_helpMenu->addAction(m_aboutAct);
+    m_helpMenu->addAction(m_aboutQtAct);
 }
 
 void QtWindow::openRecentFile()
