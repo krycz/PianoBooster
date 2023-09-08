@@ -36,6 +36,7 @@
 
 #include <QApplication>
 #include <QDebug>
+#include <QPixmap>
 #include <QSurfaceFormat>
 #include <QStringBuilder>
 
@@ -639,8 +640,11 @@ void QtWindow::help()
 
 void QtWindow::about()
 {
-    QMessageBox msgBox(this);
-    msgBox.setWindowTitle (tr("About Piano Booster"));
+    auto logo = QPixmap(QStringLiteral(":/images/pianobooster.png"));
+    auto msgBox = QMessageBox(this);
+    msgBox.setMinimumWidth(600);
+    msgBox.setWindowTitle(tr("About Piano Booster"));
+    msgBox.setIconPixmap(logo.scaledToWidth(64, Qt::SmoothTransformation));
     msgBox.setText(
             tr("<b>PianoBooster - Version %1</b> <br><br>").arg(APP_VERSION) %
             tr("<b>Boost</b> your <b>Piano</b> playing skills!<br><br>") %
@@ -662,7 +666,6 @@ void QtWindow::about()
                "project (copyright © 2014 Uri Herrera <uri_herrera@nitrux.in> and others, see the according %1)").arg(
                QStringLiteral("<a href=\"" APP_URL "/blob/custom/LICENSE.LESSER\">LGPL-3.0 license</a>"))
     );
-    msgBox.setMinimumWidth(600);
     msgBox.exec();
 }
 
