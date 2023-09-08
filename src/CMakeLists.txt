@@ -338,6 +338,7 @@ endif ()
 install(FILES ../icons/hicolor/32x32/pianobooster.png DESTINATION share/icons/hicolor/32x32/apps)
 install(FILES ../icons/hicolor/48x48/pianobooster.png DESTINATION share/icons/hicolor/48x48/apps)
 install(FILES ../icons/hicolor/64x64/pianobooster.png DESTINATION share/icons/hicolor/64x64/apps)
+install(FILES ../icons/hicolor/scalable/pianobooster.svg DESTINATION share/icons/hicolor/scalable/apps)
 
 # configure and install music books
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/../music/BoosterMusicBooks.zip ${CMAKE_CURRENT_BINARY_DIR}/ COPYONLY)
