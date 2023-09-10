@@ -188,36 +188,20 @@ void  CMidiTrack::ignoreSysexEvent(byte_t data)
 /* Time Signature */
 void CMidiTrack::readTimeSignatureEvent()
 {
-    byte_t timeSigNumerator;
-    byte_t timeSigDenominator;
-    CMidiEvent event;
-    byte_t b3, b4;
-
     const auto len = readVarLen();
-    if (len!=4)
+    if (len != 4)
     {
         errorFail(SMF_CORRUPTED_MIDI_FILE);
         return;
     }
-    timeSigNumerator = readByte();  // The number on the top
-    timeSigDenominator = readByte(); // the number on the bottom
-    if (timeSigDenominator >= 5)
-    {
-        errorFail(SMF_CORRUPTED_MIDI_FILE);
-        return;
-    }
-    if (timeSigNumerator > 20)
-    {
-        errorFail(SMF_CORRUPTED_MIDI_FILE);
-        return;
-    }
-    //len = (1<<timeSigDenominator);
-
-    b3 = readByte();           /* Ignore the last bytes */
-    b4 = readByte();           /* Ignore the last bytes */
-    event.metaEvent(readDelaTime(), MIDI_PB_timeSignature, timeSigNumerator, 1<<timeSigDenominator);
+    const auto timeSigNumerator = readByte();  // the number on the top
+    const auto timeSigDenominator = readByte(); // the number on the bottom
+    const auto b3 = readByte();
+    const auto b4 = readByte();
+    auto event = CMidiEvent();
+    event.metaEvent(readDelaTime(), MIDI_PB_timeSignature, timeSigNumerator, 1 << timeSigDenominator);
     m_trackEventQueue->push(event);
-    __dt(ppDebugTrack(4,"Key Signature %d/%d metronome %d quarter %d", timeSigNumerator, 1<<timeSigDenominator, b3, b4));
+    __dt(ppDebugTrack(4,"Key Signature %d/%d metronome %d quarter %d", timeSigNumerator, 1 << timeSigDenominator, b3, b4));
 }
 
 /* Key Signature */
