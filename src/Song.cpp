@@ -163,10 +163,10 @@ eventBits_t CSong::task(qint64 ticks)
 {
     realTimeEngine(ticks);
 
-    while (!m_reachedMidiEof)
+    for (auto scoreHasEnoughSpace = true; !m_reachedMidiEof && scoreHasEnoughSpace;)
     {
         // loop as long as there is space and that the score also has space
-        while (midiEventSpace() > 10 && chordEventSpace() > 10 && m_scoreWin->midiEventSpace() > 100)
+        while (midiEventSpace() > 10 && chordEventSpace() > 10 && (scoreHasEnoughSpace = m_scoreWin->midiEventSpace() > 100))
         {
             // Read the next events
             CMidiEvent event = m_midiFile->readMidiEvent();
@@ -198,7 +198,11 @@ eventBits_t CSong::task(qint64 ticks)
         m_scoreWin->drawScrollingSymbols(false); // don't display any thing just  remove from the queue
     }
 
-    eventBits_t eventBits = m_realTimeEventBits;
+    // unset the seeking state (noop if not seeking anyways)
+    doneSeekingBarNumber();
+
+    // return and unset event bits
+    const auto eventBits = m_realTimeEventBits;
     m_realTimeEventBits = 0;
     return eventBits;
 }
