@@ -163,28 +163,18 @@ eventBits_t CSong::task(qint64 ticks)
 {
     realTimeEngine(ticks);
 
-    while (true)
+    while (!m_reachedMidiEof)
     {
-        if (m_reachedMidiEof == true)
-            goto exitTask;
-
-        while (true)
+        // loop as long as there is space and that the score also has space
+        while (midiEventSpace() > 10 && chordEventSpace() > 10 && m_scoreWin->midiEventSpace() > 100)
         {
-            // Check that there is space
-            if (midiEventSpace() <= 10 || chordEventSpace() <= 10)
-                break;
-
-            // and that the Score has space also
-            if (m_scoreWin->midiEventSpace() <= 100)
-                break;
-
             // Read the next events
             CMidiEvent event = m_midiFile->readMidiEvent();
 
             //ppLogTrace("Song event delta %d type 0x%x chan %d Note %d", event.deltaTime(), event.type(), event.channel(), event.note());
 
             // Find the next chord
-            if (m_findChord.findChord(event, getActiveChannel(), PB_PART_both) == true)
+            if (m_findChord.findChord(event, getActiveChannel(), PB_PART_both))
                 chordEventInsert( m_findChord.getChord() ); // give the Conductor the chord event
 
             // send the events to the other end
@@ -201,16 +191,13 @@ eventBits_t CSong::task(qint64 ticks)
         }
 
         // carry on with the data until we reach the bar we want
-        if (seekingBarNumber() && m_reachedMidiEof == false && playingMusic())
-        {
-            realTimeEngine(0);
-            m_scoreWin->drawScrollingSymbols(false); // don't display any thing just  remove from the queue
-        }
-        else
+        if (!seekingBarNumber() || m_reachedMidiEof || !playingMusic())
             break;
+
+        realTimeEngine(0);
+        m_scoreWin->drawScrollingSymbols(false); // don't display any thing just  remove from the queue
     }
 
-exitTask:
     eventBits_t eventBits = m_realTimeEventBits;
     m_realTimeEventBits = 0;
     return eventBits;
