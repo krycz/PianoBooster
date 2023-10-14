@@ -33,8 +33,6 @@
 CMidiDeviceRt::CMidiDeviceRt()
 {
     m_validConnection = false;
-    m_midiout = nullptr;
-    m_midiin = nullptr;
     m_midiPorts[0] = -1;
     m_midiPorts[1] = -1;
     m_rawDataIndex = 0;
@@ -43,39 +41,25 @@ CMidiDeviceRt::CMidiDeviceRt()
 
 CMidiDeviceRt::~CMidiDeviceRt()
 {
-    if (m_midiout!=nullptr) { delete m_midiout; }
-    if (m_midiin!=nullptr) {delete m_midiin; }
 }
 
 void CMidiDeviceRt::init()
 {
-    if (m_midiin == nullptr || m_midiout == nullptr) {
-        m_midiPorts[0] = -1;
-        m_midiPorts[1] = -1;
-        m_rawDataIndex = 0;
-        if (m_midiout!=nullptr) {
-            delete m_midiout;
-            m_midiout = nullptr;
-        }
-        try {
-            m_midiout = new RtMidiOut();
-        }
-        catch(RtMidiError &error){
-            error.printMessage();
-            return;
-        }
-
-        if (m_midiin!=nullptr) {
-            delete m_midiin;
-            m_midiin = nullptr;
-        }
-        try {
-            m_midiin = new RtMidiIn();
-        }
-        catch(RtMidiError &error){
-            error.printMessage();
-            return;
-        }
+    if (m_midiin && m_midiout) {
+        return;
+    }
+    m_midiPorts[0] = -1;
+    m_midiPorts[1] = -1;
+    m_rawDataIndex = 0;
+    try {
+        m_midiout = std::make_unique<RtMidiOut>();
+    } catch (RtMidiError &error) {
+        error.printMessage();
+    }
+    try {
+        m_midiin = std::make_unique<RtMidiIn>();
+    } catch (RtMidiError &error) {
+        error.printMessage();
     }
 }
 
@@ -91,31 +75,20 @@ QString CMidiDeviceRt::addIndexToString(const QString &name, int index)
 QStringList CMidiDeviceRt::getMidiPortList(midiType_t type)
 {
     init();
-    QStringList portNameList;
-    if (m_midiin == nullptr || m_midiout == nullptr) {
+    auto portNameList = QStringList();
+    if (!m_midiin || !m_midiout) {
         return portNameList;
     }
 
-    unsigned int nPorts;
-    QString name;
-    RtMidi* midiDevice;
+    auto *const midiDevice = type == MIDI_INPUT ? static_cast<RtMidi *>(m_midiin.get()) : static_cast<RtMidi *>(m_midiout.get());
+    const auto nPorts = midiDevice->getPortCount();
+    portNameList.reserve(nPorts);
 
-    if (type == MIDI_INPUT)
-        midiDevice = m_midiin;
-    else
-        midiDevice = m_midiout;
-
-    nPorts = midiDevice->getPortCount();
-
-    for(unsigned int i=0; i< nPorts && i < std::numeric_limits<int>::max(); ++i)
-    {
+    for (unsigned int i = 0; i < nPorts && i < std::numeric_limits<int>::max(); ++i) {
         // kotechnology creating indexed string from the post name
-        name = addIndexToString(midiDevice->getPortName(i).c_str(), static_cast<int>(i));
-        if (name.contains("RtMidi Output Client"))
-            continue;
-        if (name.contains("RtMidi Input Client"))
-            continue;
-         portNameList << name;
+        const auto name = addIndexToString(midiDevice->getPortName(i).c_str(), static_cast<int>(i));
+        if (!name.contains(QLatin1String("RtMidi Output Client")) && !name.contains(QLatin1String("RtMidi Input Client")))
+            portNameList << name;
     }
 
     return portNameList;
@@ -124,35 +97,24 @@ QStringList CMidiDeviceRt::getMidiPortList(midiType_t type)
 bool CMidiDeviceRt::openMidiPort(midiType_t type, const QString &portName)
 {
     init();
-    if (m_midiin == nullptr || m_midiout == nullptr) {
+    if (!m_midiin || !m_midiout || portName.isEmpty()) {
         return false;
     }
-
-    unsigned int nPorts;
-    QString name;
-    RtMidi* midiDevice;
-
-    if (portName.isEmpty())
-        return false;
 
     int dev;
-    if (type == MIDI_INPUT)
-    {
-        midiDevice = m_midiin;
+    RtMidi *midiDevice;
+    if (type == MIDI_INPUT) {
+        midiDevice = m_midiin.get();
         dev = 0;
-    }
-    else
-    {
-        midiDevice = m_midiout;
+    } else {
+        midiDevice = m_midiout.get();
         dev = 1;
     }
 
-    nPorts = midiDevice->getPortCount();
-
-    for(unsigned int i=0; i< nPorts && i <= std::numeric_limits<int>::max(); i++)
-    {
+    const auto nPorts = midiDevice->getPortCount();
+    for (unsigned int i = 0; i < nPorts && i <= std::numeric_limits<int>::max(); i++) {
         // kotechnology creating indexed string from the post name
-        name = addIndexToString(midiDevice->getPortName(i).c_str(), static_cast<int>(i));
+        const auto name = addIndexToString(midiDevice->getPortName(i).c_str(), static_cast<int>(i));
         if (name == portName) // Test for a match
         {
             if (m_midiPorts[dev] >= 0)

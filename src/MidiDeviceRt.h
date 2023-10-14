@@ -30,11 +30,12 @@
 #include "MidiDeviceBase.h"
 #include "rtmidi/RtMidi.h"
 
-class CMidiDeviceRt : public CMidiDeviceBase
-{
+#include <memory>
+
+class CMidiDeviceRt : public CMidiDeviceBase {
     virtual void init();
     //! add a midi event to be played immediately
-    virtual void playMidiEvent(const CMidiEvent & event);
+    virtual void playMidiEvent(const CMidiEvent &event);
     virtual int checkMidiInput();
     virtual CMidiEvent readMidiInput();
 
@@ -43,30 +44,31 @@ class CMidiDeviceRt : public CMidiDeviceBase
     virtual bool openMidiPort(midiType_t type, const QString &portName);
     virtual void closeMidiPort(midiType_t type, int index);
 
-    virtual bool validMidiConnection() {return m_validConnection;}
+    virtual bool validMidiConnection()
+    {
+        return m_validConnection;
+    }
 
     // based on the fluid synth settings
-    virtual int     midiSettingsSetStr(const QString &name, const QString &str);
-    virtual int     midiSettingsSetNum(const QString &name, double val);
-    virtual int     midiSettingsSetInt(const QString &name, int val);
+    virtual int midiSettingsSetStr(const QString &name, const QString &str);
+    virtual int midiSettingsSetNum(const QString &name, double val);
+    virtual int midiSettingsSetInt(const QString &name, int val);
     virtual QString midiSettingsGetStr(const QString &name);
-    virtual double  midiSettingsGetNum(const QString &name);
-    virtual int     midiSettingsGetInt(const QString &name);
+    virtual double midiSettingsGetNum(const QString &name);
+    virtual int midiSettingsGetInt(const QString &name);
 
 public:
     CMidiDeviceRt();
     ~CMidiDeviceRt();
 
-
 private:
-
-    RtMidiOut *m_midiout;
-    RtMidiIn *m_midiin;
+    std::unique_ptr<RtMidiOut> m_midiout;
+    std::unique_ptr<RtMidiIn> m_midiin;
 
     double m_stamp;
 
     // 0 for input, 1 for output
-    int m_midiPorts[2];      // select which MIDI output port to open
+    int m_midiPorts[2]; // select which MIDI output port to open
     std::vector<unsigned char> m_inputMessage;
     unsigned char m_savedRawBytes[40]; // Raw data is used for used for a SYSTEM_EVENT
     unsigned int m_rawDataIndex;
