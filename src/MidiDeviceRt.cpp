@@ -53,12 +53,14 @@ void CMidiDeviceRt::init()
     m_rawDataIndex = 0;
     try {
         m_midiout = std::make_unique<RtMidiOut>();
-    } catch (RtMidiError &error) {
+        m_midiout->setErrorCallback(handleRtMidiError);
+    } catch (const RtMidiError &error) {
         error.printMessage();
     }
     try {
         m_midiin = std::make_unique<RtMidiIn>();
-    } catch (RtMidiError &error) {
+        m_midiin->setErrorCallback(handleRtMidiError);
+    } catch (const RtMidiError &error) {
         error.printMessage();
     }
 }
@@ -208,14 +210,7 @@ void CMidiDeviceRt::playMidiEvent(const CMidiEvent & event)
             return;
 
     }
-    try {
-        m_midiout->sendMessage( &message );
-    }
-    catch(RtMidiError &error){
-        error.printMessage();
-        m_validConnection = false;
-    }
-
+    m_midiout->sendMessage(&message);
     //event.printDetails(); // useful for debugging
 }
 
@@ -224,16 +219,9 @@ int CMidiDeviceRt::checkMidiInput()
 {
     if (m_midiPorts[0] < 0)
         return 0;
-
-    try {
-        m_stamp = m_midiin->getMessage( &m_inputMessage );
-    }
-    catch(RtMidiError &error){
-        error.printMessage();
-        m_validConnection = false;
+    m_stamp = m_midiin->getMessage( &m_inputMessage );
+    if (!m_validConnection)
         return 0;
-    }
-
     return m_inputMessage.size() > std::numeric_limits<int>::max() ? std::numeric_limits<int>::max() : static_cast<int>(m_inputMessage.size());
 }
 
@@ -327,4 +315,17 @@ int CMidiDeviceRt::midiSettingsGetInt(const QString &name)
 {
     Q_UNUSED(name)
     return 0;
+}
+
+void CMidiDeviceRt::handleRtMidiError(RtMidiError::Type type, const std::string &errorText, void *userData)
+{
+    static_cast<CMidiDeviceRt *>(userData)->handleRtMidiError(type, errorText);
+}
+
+void CMidiDeviceRt::handleRtMidiError(RtMidiError::Type type, const std::string &errorText)
+{
+    std::cerr
+        << (type == RtMidiError::WARNING || type == RtMidiError::DEBUG_WARNING ? "MIDI warning: " : "MIDI error: ")
+        << errorText << '\n';
+    m_validConnection = false;
 }

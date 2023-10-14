@@ -34,6 +34,8 @@
 
 class CMidiDeviceRt : public CMidiDeviceBase {
     virtual void init();
+    static void handleRtMidiError(RtMidiError::Type type, const std::string &errorText, void *userData);
+    void handleRtMidiError(RtMidiError::Type type, const std::string &errorText);
     //! add a midi event to be played immediately
     virtual void playMidiEvent(const CMidiEvent &event);
     virtual int checkMidiInput();
