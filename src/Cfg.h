@@ -97,7 +97,7 @@ struct ColorTheme
     CColor playedStoppedColor = CColor(1.0, 0.8, 0.0);     // bright orange
     CColor backgroundColor    = CColor(0.0, 0.0, 0.0);     // black
     CColor barMarkerColor     = CColor(0.3, 0.25, 0.25);   // grey
-    CColor beatMarkerColor    = CColor(0.25, 0.2, 0.2);    // grey
+    CColor beatMarkerColor    = CColor(0.1, 0.1, 0.1);     // grey
     CColor pianoGoodColor     = playedGoodColor;
     CColor pianoBadColor      = CColor(1.0, 0.0, 0.0);
     CColor noteNameColor      = CColor(1.0, 1.0, 1.0);

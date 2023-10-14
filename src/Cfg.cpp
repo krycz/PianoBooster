@@ -62,8 +62,8 @@ void ColorTheme::load(BuiltInColorTheme builtInColorTheme)
         playedBadColor     = CColor(0.8, 0.3, 0.8);     // orange
         playedStoppedColor = CColor(1.0, 0.8, 0.0);     // bright orange
         backgroundColor    = CColor(1.0, 1.0, 1.0);     // white
-        barMarkerColor     = CColor(0.5, 0.5, 0.5);     // grey
-        beatMarkerColor    = CColor(0.25, 0.25, 0.25);  // grey
+        barMarkerColor     = CColor(0.7, 0.7, 0.7);
+        beatMarkerColor    = CColor(0.8, 0.8, 0.8);
         pianoGoodColor     = playedGoodColor;
         pianoBadColor      = CColor(1.0, 0.0, 0.0);
         noteNameColor      = CColor(0.0, 0.0, 0.0);
