@@ -118,7 +118,7 @@ void CGLView::paintGL()
         auto *const funcs = ctx->functions();
         const auto &colorTheme = Cfg::colorTheme();
         const auto &backgroundColor = colorTheme.backgroundColor;
-        funcs->glClearColor(backgroundColor.red, backgroundColor.green, backgroundColor.blue, 0.0);
+        funcs->glClearColor(backgroundColor.red, backgroundColor.green, backgroundColor.blue, 1.0);
         funcs->glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         m_themeChange = false;
     }
