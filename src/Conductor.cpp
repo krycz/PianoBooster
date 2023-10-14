@@ -641,11 +641,9 @@ void CConductor::pianistInput(CMidiEvent inputNote)
         {
             m_goodPlayedNotes.addNote(hand, inputNote.note());
             m_piano->addPianistNote(hand, inputNote,true);
-            qint64 pianistTiming;
-            if  ( ( cfg_timingMarkersFlag && m_followSkillAdvanced ) || m_playMode == PB_PLAY_MODE_rhythmTapping )
-                pianistTiming = m_pianistTiming;
-            else
-                pianistTiming = NOT_USED;
+            const auto pianistTiming = cfg_timingMarkersFlag || m_playMode == PB_PLAY_MODE_rhythmTapping
+                ? m_pianistTiming
+                : qint64(NOT_USED);
             m_scoreWin->setPlayedNoteColor(inputNote.note(),
                         (!m_followPlayingTimeOut)? Cfg::colorTheme().playedGoodColor : Cfg::colorTheme().playedBadColor,
                         m_chordDeltaTime, pianistTiming);
