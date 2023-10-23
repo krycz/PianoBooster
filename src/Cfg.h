@@ -29,6 +29,8 @@
 #ifndef __CFG_H__
 #define __CFG_H__
 
+#include <algorithm>
+
 #define OPTION_BENCHMARK_TEST     0
 #if OPTION_BENCHMARK_TEST
 #define BENCHMARK_INIT()        benchMarkInit()
@@ -69,6 +71,15 @@ public:
     constexpr bool operator==(CColor color)
     {
         return red == color.red && green == color.green && blue == color.blue;
+    }
+
+    constexpr void ensureBrightness(float v)
+    {
+        if (red < v && green < v && blue < v) {
+            red = std::max(red, v);
+            green = std::max(green, v);
+            blue = std::max(blue, v);
+        }
     }
 
     float red, green, blue;

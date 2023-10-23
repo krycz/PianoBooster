@@ -168,9 +168,12 @@ void CScore::drawPianoKeyboard(){
             glScalef(1.0f, 1.4f, 1.0f);
             glTranslatef(Cfg::staveStartX() + xPlaceSize * static_cast<float>(i++), yStart, 0.0f);
 
-            CDraw::drColor (CColor(1.0, 1.0, 1.0));
-            if(state[k]==1) CDraw::drColor(stopped ? Cfg::colorTheme().playedStoppedColor : Cfg::colorTheme().noteColor);
-            if(state[k]==2) CDraw::drColor(Cfg::colorTheme().playedBadColor);
+            const auto &theme = Cfg::colorTheme();
+            auto color = CColor(1.0, 1.0, 1.0);
+            if(state[k]==1) color = stopped ? theme.playedStoppedColor : theme.noteColor;
+            else if(state[k]==2) color = theme.playedBadColor;
+            color.ensureBrightness(0.4f);  // ensure the color is bright enough to not blend too much with black keys
+            CDraw::drColor(color);
             glBegin(GL_QUADS);
             glVertex2f(0, ySize);
             glVertex2f(xKeySize, ySize);
