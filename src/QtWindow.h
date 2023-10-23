@@ -111,7 +111,7 @@ private slots:
 
     void toggleSidePanel()
     {
-        m_sidePanel->setVisible(m_sidePanelStateAct->isChecked());
+        m_sidePanelDockWidget->setVisible(m_sidePanelStateAct->isChecked());
     }
 
     void onViewPianoKeyboard(){
@@ -193,6 +193,7 @@ private:
     QtUtilities::QtSettings *m_qtSettings;
     QtUtilities::SettingsDialog *m_settingsDlg;
 
+    QDockWidget *m_sidePanelDockWidget;
     GuiSidePanel *m_sidePanel;
     GuiTopBar *m_topBar;
     QTextBrowser *m_tutorWindow;

@@ -107,21 +107,35 @@ QtWindow::QtWindow(CSettings *settings, QtUtilities::QtSettings *qtSettings, QWi
     m_song = m_glWidget->getSongObject();
     m_score = m_glWidget->getScoreObject();
 
-    QHBoxLayout *mainLayout = new QHBoxLayout;
-    QVBoxLayout *columnLayout = new QVBoxLayout;
+    // setup dock widget with side panel
+    m_sidePanelDockWidget = new QDockWidget(this);
+#if defined(Q_OS_WINDOWS) || defined(Q_OS_MAC)
+    constexpr auto dockFeatures = QDockWidget::DockWidgetMovable | QDockWidget::DockWidgetFloatable;
+#else
+    auto dockFeatures = static_cast<QDockWidget::DockWidgetFeatures>(QDockWidget::DockWidgetMovable);
+    if (QGuiApplication::platformName().compare(QLatin1String("wayland"), Qt::CaseInsensitive)) {
+        // enable floating windows only on non-Wayland platforms as one can never put a floating window back under Wayland
+        dockFeatures |= QDockWidget::DockWidgetFloatable;
+    } else {
+        // ensure currently floating windows (e.g. from the last X11 session) aren't floating anymore under Wayland
+        m_sidePanelDockWidget->setFloating(false);
+    }
+#endif
+    m_sidePanelDockWidget->setFeatures(dockFeatures);
+    m_sidePanelDockWidget->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
+    m_sidePanelDockWidget->setWidget(m_sidePanel = new GuiSidePanel(this, m_settings));
+    m_sidePanelDockWidget->setWindowTitle(tr("Options"));
 
-    m_sidePanel = new GuiSidePanel(this, m_settings);
     m_topBar = new GuiTopBar(this, m_settings);
     m_tutorWindow = new QTextBrowser(this);
     m_tutorWindow->hide();
 
     m_settings->init(this, m_song, m_sidePanel, m_topBar);
 
-    mainLayout->addWidget(m_sidePanel);
+    QVBoxLayout *columnLayout = new QVBoxLayout;
     columnLayout->addWidget(m_topBar);
     columnLayout->addWidget(m_glWidget);
     columnLayout->addWidget(m_tutorWindow);
-    mainLayout->addLayout(columnLayout);
 
     m_song->init2(m_score, m_settings);
 
@@ -129,9 +143,10 @@ QtWindow::QtWindow(CSettings *settings, QtUtilities::QtSettings *qtSettings, QWi
     m_topBar->init(m_song);
 
     QWidget *centralWin = new QWidget();
-    centralWin->setLayout(mainLayout);
+    centralWin->setLayout(columnLayout);
 
     setCentralWidget(centralWin);
+    addDockWidget(Qt::LeftDockWidgetArea, m_sidePanelDockWidget);
 
     m_glWidget->setFocus(Qt::ActiveWindowFocusReason);
 
