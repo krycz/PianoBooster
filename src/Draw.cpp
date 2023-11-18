@@ -659,7 +659,7 @@ void CDraw::drawSymbol(CSymbol symbol, float x, float y, CSlot* slot)
             drColor(CColor(0.3, 0.4, 0.4));
             glBegin(GL_LINE_STRIP);
                 glVertex2f(x,  y);
-                glVertex2f(x + CMidiFile::ppqnAdjust(symbol.getMidiDuration()) * HORIZONTAL_SPACING_FACTOR, y);
+                glVertex2f(x + CMidiFile::ppqnAdjust<float>(static_cast<float>(symbol.getMidiDuration())) * HORIZONTAL_SPACING_FACTOR, y);
             glEnd();
             drColor(color);
             */

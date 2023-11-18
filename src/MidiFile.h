@@ -57,8 +57,9 @@ public:
     int readHeader(void);
     void rewind();
     static int getPulsesPerQuarterNote(){return m_ppqn;}
-    static int ppqnAdjust(float value) {
-        return static_cast<int>((value * static_cast<float>(CMidiFile::getPulsesPerQuarterNote()))/DEFAULT_PPQN );
+    template<typename T = int>
+    static T ppqnAdjust(float value) {
+        return static_cast<T>((value * static_cast<float>(CMidiFile::getPulsesPerQuarterNote()))/DEFAULT_PPQN );
     }
     QString getSongTitle() {return m_songTitle;}
 
