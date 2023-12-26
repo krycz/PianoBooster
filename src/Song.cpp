@@ -29,6 +29,8 @@
 #include "Song.h"
 #include "Score.h"
 
+#include "resources/config.h"
+
 void CSong::init2(CScore * scoreWin, CSettings* settings)
 {
 
@@ -55,7 +57,9 @@ void CSong::loadSong(const QString & filename)
 #ifdef _WIN32
      fn = fn.replace('/','\\');
 #endif
-    m_midiFile->setLogLevel(3);
+    auto logLevelOk = false;
+    auto logLevel = qEnvironmentVariableIntValue(PROJECT_VARNAME_UPPER "_MIDI_FILE_LOG_LEVEL", &logLevelOk);
+    m_midiFile->setLogLevel(logLevelOk ? logLevel : 3);
     m_midiFile->openMidiFile(std::string(fn.toLocal8Bit().data()));
     ppLogInfo("Opening song %s",  fn.toLocal8Bit().data());
     transpose(0);
