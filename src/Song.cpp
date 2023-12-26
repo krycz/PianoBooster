@@ -59,9 +59,9 @@ void CSong::loadSong(const QString & filename)
 #endif
     auto logLevelOk = false;
     auto logLevel = qEnvironmentVariableIntValue(PROJECT_VARNAME_UPPER "_MIDI_FILE_LOG_LEVEL", &logLevelOk);
+    ppLogInfo("Opening song %s",  fn.toLocal8Bit().data());
     m_midiFile->setLogLevel(logLevelOk ? logLevel : 3);
     m_midiFile->openMidiFile(std::string(fn.toLocal8Bit().data()));
-    ppLogInfo("Opening song %s",  fn.toLocal8Bit().data());
     transpose(0);
     midiFileInfo();
     m_midiFile->setLogLevel(99);

@@ -71,7 +71,7 @@ static void openLogFile() {
 
 static void flushLogs()
 {
-    if (logInfoFile != stdout && logsOpened)
+    if (logInfoFile && logsOpened)
     {
         fflush(logInfoFile);
         // logErrorFile is the same as logInfoFile

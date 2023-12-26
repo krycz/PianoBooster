@@ -93,6 +93,7 @@ void CMidiTrack::ppDebugTrack(int level, const char *msg, ...)
     vfprintf(stdout, msg, ap);
     va_end(ap);
     fputc('\n', stdout);
+    fflush(stdout);
 }
 
 dword_t CMidiTrack::readVarLen()
