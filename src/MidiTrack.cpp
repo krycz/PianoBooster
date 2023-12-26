@@ -200,7 +200,7 @@ void CMidiTrack::readTimeSignatureEvent()
     const auto b3 = readByte();
     const auto b4 = readByte();
     auto event = CMidiEvent();
-    event.metaEvent(readDelaTime(), MIDI_PB_timeSignature, timeSigNumerator, 1 << timeSigDenominator);
+    event.metaEvent(readDeltaTime(), MIDI_PB_timeSignature, timeSigNumerator, 1 << timeSigDenominator);
     m_trackEventQueue->push(event);
     __dt(ppDebugTrack(4,"Key Signature %d/%d metronome %d quarter %d", timeSigNumerator, 1 << timeSigDenominator, b3, b4));
 }
@@ -226,7 +226,7 @@ void CMidiTrack::readKeySignatureEvent()
         return;
     }
 
-    event.metaEvent(readDelaTime(), MIDI_PB_keySignature, keySig, majorKey);
+    event.metaEvent(readDeltaTime(), MIDI_PB_keySignature, keySig, majorKey);
     m_trackEventQueue->push(event);
     __dt(ppDebugTrack(4,"Key Signature %d maj/min %d", keySig, majorKey));
     if (CStavePos::getKeySignature() == NOT_USED)
@@ -283,7 +283,7 @@ void CMidiTrack::readMetaEvent(byte_t type)
         const auto b2 = readByte();
         const auto b3 = readByte();
         const auto tempo = b1 << 16 | b2 << 8 | b3; // microseconds per quarter-note#
-        event.metaEvent(readDelaTime(), MIDI_PB_tempo, static_cast<int>(tempo), 0);
+        event.metaEvent(readDeltaTime(), MIDI_PB_tempo, static_cast<int>(tempo), 0);
         m_trackEventQueue->push(event);
         __dt(ppDebugTrack(2,"Set Tempo %d", tempo));
         break;
@@ -433,14 +433,14 @@ void CMidiTrack::decodeMidiEvent()
     {
     case MIDI_NOTE_OFF:              /* Note off */
         data2 = readByte();
-        noteOffEvent(event, readDelaTime(), channel, data1, data2);
+        noteOffEvent(event, readDeltaTime(), channel, data1, data2);
         break;
 
     case MIDI_NOTE_ON:             /* Note on */
         data2 = readByte();
         if (data2 != 0 )
         {
-            event.noteOnEvent(readDelaTime(), channel, data1, data2);
+            event.noteOnEvent(readDeltaTime(), channel, data1, data2);
             __dt(ppDebugTrack(1,"Chan %d note on %d",channel + 1, data1));
 
             event.setDuration(m_currentTime); // Set the duration to the current time for now
@@ -454,39 +454,39 @@ void CMidiTrack::decodeMidiEvent()
         }
         else
         {
-            noteOffEvent(event, readDelaTime(), channel, data1, 0);
+            noteOffEvent(event, readDeltaTime(), channel, data1, 0);
         }
         break;
 
     case MIDI_NOTE_PRESSURE :              /* Key pressure After touch (POLY_AFTERTOUCH)  3 bytes */
         data2 = readByte();
-        event.notePressure(readDelaTime(), channel, data1, data2);
+        event.notePressure(readDeltaTime(), channel, data1, data2);
         m_trackEventQueue->push(event);
         __dt(ppDebugTrack(2,"Chan %d After touch", channel + 1));
         break;
 
     case MIDI_PROGRAM_CHANGE :               /* program change */
-        event.programChangeEvent(readDelaTime(), channel, data1);
+        event.programChangeEvent(readDeltaTime(), channel, data1);
         m_trackEventQueue->push(event);
         __dt(ppDebugTrack(2,"Chan %d Program change %d", channel + 1, data1 + 1));
         break;
 
     case MIDI_CONTROL_CHANGE :               /* Control Change */
         data2 = readByte();
-        event.controlChangeEvent(readDelaTime(), channel, data1, data2);
+        event.controlChangeEvent(readDeltaTime(), channel, data1, data2);
         m_trackEventQueue->push(event);
         __dt(ppDebugTrack(2,"Chan %d Control Change %d %d", channel + 1, data1, data2));
         break;
 
     case MIDI_CHANNEL_PRESSURE:            /* Channel Pressure (AFTERTOUCH)*/
-        event.channelPressure(readDelaTime(), channel, data1);
+        event.channelPressure(readDeltaTime(), channel, data1);
         m_trackEventQueue->push(event);
         __dt(ppDebugTrack(2,"Chan %d Channel Pressure", channel + 1));
         break;
 
     case MIDI_PITCH_BEND:    /* Pitch bend */
         data2 = readByte();
-        event.pitchBendEvent(readDelaTime(), channel, data1, data2);
+        event.pitchBendEvent(readDeltaTime(), channel, data1, data2);
         m_trackEventQueue->push(event);
         __dt(ppDebugTrack(2,"Chan %d Pitch bend",channel + 1));
         break;

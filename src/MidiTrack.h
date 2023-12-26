@@ -63,7 +63,7 @@ public:
         }
     }
 
-    int readDelaTime()
+    int readDeltaTime()
     {
         int deltaTime = m_deltaTime;
         m_deltaTime = 0;
