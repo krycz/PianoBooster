@@ -105,14 +105,14 @@ dword_t CMidiTrack::readVarLen()
     if ((value = readByte()) & 0x80)
     {
         value &= 0x7F;
-        for (i =0; i < 4; i++)
-        {
-            value = ( value << 7 ) + (( c = readByte()) & 0x7F );
-            if (failed() == true)
+        if (failed()) {
+            return value;
+        }
+        for (i = 0; i < 4; ++i) {
+            value = (value << 7) + (( c = readByte()) & 0x7F );
+            if (failed() || (c & 0x80) == 0)
                 break;
-            if ((c & 0x80) == 0)
-                break;
-            else if (i>=3)
+            else if (i >= 3)
                 errorFail(SMF_END_OF_FILE);
         }
     }
@@ -120,7 +120,7 @@ dword_t CMidiTrack::readVarLen()
     if (value > 400)
         __dt(ppDebugTrack(2,"Large variable length data %d", value));
 #endif
-    return ( value );
+    return value;
 }
 
 std::string CMidiTrack::readTextEvent()

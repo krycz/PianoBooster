@@ -72,7 +72,7 @@ public:
 
     dword_t getTrackLength() {return m_trackLength;}
     void decodeTrack();
-    bool failed() { return (m_midiError != SMF_NO_ERROR) ? true : false;}
+    bool failed() { return m_midiError != SMF_NO_ERROR;}
     midiErrors_t getMidiError() { return m_midiError;}
 
     int length() {return m_trackEventQueue->length();}
@@ -107,7 +107,7 @@ private:
         if (m_trackLengthCounter != 0 )
         {
             c = static_cast<byte_t>(m_file.get());
-            if (m_file.fail() == true)
+            if (m_file.fail())
                 errorFail(SMF_END_OF_FILE);
             m_trackLengthCounter--;
         }
