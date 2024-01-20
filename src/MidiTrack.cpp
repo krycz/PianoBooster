@@ -495,6 +495,8 @@ void CMidiTrack::decodeMidiEvent()
         decodeSystemMessage(status, data1);
         m_savedRunningStatus=0;
         break;
+    default:
+        __dt(ppDebugTrack(2,"Chan %d Unknown event %d", channel + 1, status & 0xf0));
     }
 }
 
