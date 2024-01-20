@@ -60,7 +60,7 @@ void ColorTheme::load(BuiltInColorTheme builtInColorTheme)
         noteColorDim       = CColor(0.4, 0.4, 0.4);     // grey
         playedGoodColor    = CColor(0.5, 0.6, 1.0);     // purple
         playedBadColor     = CColor(0.8, 0.3, 0.8);     // orange
-        playedStoppedColor = CColor(1.0, 0.8, 0.0);     // bright orange
+        playedStoppedColor = CColor(0.0, 0.0, 0.75);    // blue
         backgroundColor    = CColor(1.0, 1.0, 1.0);     // white
         barMarkerColor     = CColor(0.7, 0.7, 0.7);
         beatMarkerColor    = CColor(0.8, 0.8, 0.8);
