@@ -237,67 +237,50 @@ void CNotation::calculateScoreNoteLength()
 
 void CNotation::findNoteSlots()
 {
-    CMidiEvent midi;
-    CSlot slot;
+    const auto noteColor = Cfg::colorTheme().noteColor;
+    auto midi = CMidiEvent();
+    auto slot = CSlot();
 
-    while (true)
-    {
-        // Check that some body has put in some events for us
-        if (m_midiInputQueue->length() == 0)
-            break;
-
+    while (m_midiInputQueue->length()) {
         midi = m_midiInputQueue->pop();
-
         m_currentDeltaTime += midi.deltaTime();
         m_earlyBarChangeDelta += midi.deltaTime();
-        if (midi.type() == MIDI_PB_chordSeparator || midi.type() == MIDI_PB_EOF)
-        {
-            if (m_currentSlot.length() > 0)
-            {
+        if (midi.type() == MIDI_PB_chordSeparator || midi.type() == MIDI_PB_EOF) {
+            if (m_currentSlot.length() > 0) {
                 // the cord separator arrives very late so we are behind the times
                 m_currentSlot.analyse();
                 m_slotQueue->push(m_currentSlot);
                 m_currentSlot.clear();
             }
-            if (midi.type() == MIDI_PB_EOF)
-            {
+            if (midi.type() == MIDI_PB_EOF) {
                 slot.setSymbol(0, CSymbol( PB_SYMBOL_theEndMarker, PB_PART_both, 0 ));
                 m_slotQueue->push(slot);
             }
             break;
-        }
-
-        else if (midi.type() == MIDI_PB_timeSignature)
+        } else if (midi.type() == MIDI_PB_timeSignature) {
             m_bar.setTimeSig(midi.data1(), midi.data2());
-        else if (midi.type() == MIDI_PB_keySignature)
+        } else if (midi.type() == MIDI_PB_keySignature) {
             CStavePos::setKeySignature(midi.data1(), midi.data2());
-        else if (midi.type() == MIDI_NOTE_ON)
-        {
-            whichPart_t hand = CNote::findHand( midi, m_displayChannel, PB_PART_both );
-            if (hand != PB_PART_none)
-            {
-                musicalSymbol_t symbolType;
-                if (midi.channel() == MIDI_DRUM_CHANNEL)
-                    symbolType = PB_SYMBOL_drum;
-                else
-                    symbolType = PB_SYMBOL_noteHead;
-                CSymbol symbol(symbolType, hand, midi.note());
-                symbol.setColor(Cfg::colorTheme().noteColor);
-                symbol.setMidiDuration(midi.getDuration());
+        } else if (midi.type() == MIDI_NOTE_ON) {
+            const auto hand = CNote::findHand( midi, m_displayChannel, PB_PART_both);
+            if (hand == PB_PART_none) {
+                continue;
+            }
+            const auto symbolType = musicalSymbol_t(midi.channel() == MIDI_DRUM_CHANNEL ? PB_SYMBOL_drum : PB_SYMBOL_noteHead);
+            auto symbol = CSymbol(symbolType, hand, midi.note());
+            symbol.setColor(noteColor);
+            symbol.setMidiDuration(midi.getDuration());
 
-                // check if this note has occurred in this bar before
-                symbol.setAccidentalModifer(detectSuppressedNatural(midi.note()));
+            // check if this note has occurred in this bar before
+            symbol.setAccidentalModifer(detectSuppressedNatural(midi.note()));
 
-                if (m_currentSlot.addSymbol(symbol) == false) {
-                    ppLogWarn("[%d] Over the Max symbols limit", m_displayChannel + 1);
-                }
-                m_currentSlot.addDeltaTime(m_currentDeltaTime);
-                m_currentDeltaTime = 0;
-                if (hand == PB_PART_left)
-                {
-                    if (midi.note() < MIDI_BOTTOM_C)
-                        m_currentSlot.setAv8Left(MIDI_OCTAVE);
-                }
+            if (!m_currentSlot.addSymbol(symbol)) {
+                ppLogWarn("[%d] Over the Max symbols limit", m_displayChannel + 1);
+            }
+            m_currentSlot.addDeltaTime(m_currentDeltaTime);
+            m_currentDeltaTime = 0;
+            if (hand == PB_PART_left && midi.note() < MIDI_BOTTOM_C) {
+                m_currentSlot.setAv8Left(MIDI_OCTAVE);
             }
         }
     }
