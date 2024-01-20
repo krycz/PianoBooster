@@ -105,7 +105,7 @@ public:
         m_duration = 0;
     }
 
-    int deltaTime(){return m_deltaTime;}
+    int deltaTime() const { return m_deltaTime; }
     void addDeltaTime(int delta){m_deltaTime +=delta;}
     void subtractDeltaTime(int delta){m_deltaTime -=delta;}
     void setDeltaTime(int delta){m_deltaTime = delta;}
@@ -233,7 +233,7 @@ public:
 
     ////////////////////////////////////////////////////////////////////////////////
     //@brief how long the midi note was played for
-    int getDuration(){return m_duration;}
+    int getDuration() const { return m_duration; }
 
     /**
      * This merges two MidiEvents (this and the other MidiEvent)
