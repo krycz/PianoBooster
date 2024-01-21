@@ -155,6 +155,7 @@ QtWindow::QtWindow(CSettings *settings, QtUtilities::QtSettings *qtSettings, QWi
 
     m_song->setLatencyFix(m_settings->value("Midi/Latency", 0).toInt());
 
+    Cfg::experimentalNoteLength = m_settings->value("Score/ShowNoteLength", Cfg::experimentalNoteLength).toBool();
     m_song->cfg_timingMarkersFlag = m_settings->value("Score/TimingMarkers", m_song->cfg_timingMarkersFlag ).toBool();
     m_song->cfg_stopPointMode = static_cast<stopPointMode_t> (m_settings->value("Score/StopPointMode", m_song->cfg_stopPointMode ).toInt());
     m_song->cfg_rhythmTapping = static_cast<rhythmTapping_t> (m_settings->value("Score/RtyhemTappingMode", m_song->cfg_rhythmTapping ).toInt());

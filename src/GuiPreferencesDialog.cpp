@@ -133,6 +133,8 @@ void GuiPreferencesOptionPage::init(CSong* song, CSettings* settings, CGLView * 
 
 bool GuiPreferencesOptionPage::apply()
 {
+    Cfg::experimentalNoteLength = ui()->showNoteLengthCheck->isChecked();
+    m_settings->setValue("Score/ShowNoteLength", Cfg::experimentalNoteLength);
     m_song->cfg_timingMarkersFlag = ui()->timingMarkersCheck->isChecked();
     m_settings->setValue("Score/TimingMarkers", m_song->cfg_timingMarkersFlag );
     m_settings->setNoteNamesEnabled( ui()->showNoteNamesCheck->isChecked());
@@ -149,6 +151,7 @@ bool GuiPreferencesOptionPage::apply()
 
 void GuiPreferencesOptionPage::reset()
 {
+    ui()->showNoteLengthCheck->setChecked(Cfg::experimentalNoteLength);
     ui()->timingMarkersCheck->setChecked(m_song->cfg_timingMarkersFlag);
     ui()->showNoteNamesCheck->setChecked(m_settings->isNoteNamesEnabled());
     ui()->courtesyAccidentalsCheck->setChecked(m_settings->displayCourtesyAccidentals());
