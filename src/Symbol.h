@@ -54,6 +54,7 @@ typedef enum
     PB_SYMBOL_quaver,               // Quaver / Eighth note
     PB_SYMBOL_crotchet,             // Crotchet / Quarter note
     PB_SYMBOL_minim,                // Minim / Half note
+    PB_SYMBOL_threequater,          // Three-quater note
     PB_SYMBOL_semibreve,            // Semibreve / Whole note
     PB_SYMBOL_breve,                // Breve / Double whole note
 

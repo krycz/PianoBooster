@@ -163,6 +163,7 @@ enum {
     NOTATE_quaverBoundary,               // Quaver / Eighth note
     NOTATE_crotchetBoundary,             // Crotchet / Quarter note
     NOTATE_minimBoundary,                // Minim / Half note
+    NOTATE_threequaterBoundary,          // Three-quater note (half note with dot)
     NOTATE_semibreveBoundary,            // Semibreve / Whole note
     NOTATE_breveBoundary,                // Breve / Double whole note
     NOTATE_MAX_PARAMS                   // == MUST BE LAST ===

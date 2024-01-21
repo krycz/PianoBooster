@@ -388,7 +388,7 @@ bool CDraw::drawNote(CSymbol* symbol, float x, float y, CSlot* slot, CColor colo
     if (symbol->getType() <= PB_SYMBOL_crotchet)
         solidNoteHead = true;
 
-    if (symbol->getType() <= PB_SYMBOL_minim)
+    if (symbol->getType() <= PB_SYMBOL_threequater)
         showNoteStem = true;
 
     if (showNoteStem)
@@ -448,6 +448,34 @@ bool CDraw::drawNote(CSymbol* symbol, float x, float y, CSlot* slot, CColor colo
             glVertex2f(-4.0f + x, -6.0f + y); // 10
             glVertex2f(-8.0f + x, -3.0f + y); // 11
             glVertex2f(-8.0f + x, -0.0f + y); // 12
+        glEnd();
+    }
+
+    // draw a circle after the half note to make it a three-quater note
+    if (symbol->getType() == PB_SYMBOL_threequater) {
+        static constexpr auto radius = 4.0f;
+        x += 15.0f;
+        glBegin(GL_POLYGON);
+        glVertex2f(1.0f * radius + x, 0.0f * radius + y);
+        glVertex2f(0.951057f * radius + x, 0.309017f * radius + y);
+        glVertex2f(0.809017f * radius + x, 0.587785f * radius + y);
+        glVertex2f(0.587785f * radius + x, 0.809017f * radius + y);
+        glVertex2f(0.309017f * radius + x, 0.951057f * radius + y);
+        glVertex2f(6.12323e-17f * radius + x, 1.0f * radius + y);
+        glVertex2f(-0.309017f * radius + x, 0.951056f * radius + y);
+        glVertex2f(-0.587785f * radius + x, 0.809017f * radius + y);
+        glVertex2f(-0.809017f * radius + x, 0.587785f * radius + y);
+        glVertex2f(-0.951057f * radius + x, 0.309017f * radius + y);
+        glVertex2f(-1.0f * radius + x, -3.74507e-07f * radius + y);
+        glVertex2f(-0.951056f * radius + x, -0.309017f * radius + y);
+        glVertex2f(-0.809017f * radius + x, -0.587786f * radius + y);
+        glVertex2f(-0.587785f * radius + x, -0.809017f * radius + y);
+        glVertex2f(-0.309016f * radius + x, -0.951057f * radius + y);
+        glVertex2f(7.49014e-07f * radius + x, -1.0f * radius + y);
+        glVertex2f(0.309018f * radius + x, -0.951056f * radius + y);
+        glVertex2f(0.587786f * radius + x, -0.809016f * radius + y);
+        glVertex2f(0.809018f * radius + x, -0.587784f * radius + y);
+        glVertex2f(0.951057f * radius + x, -0.309016f * radius + y);
         glEnd();
     }
 

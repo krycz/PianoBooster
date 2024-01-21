@@ -202,6 +202,7 @@ void CNotation::setupNotationParamaters()
     cfg_param[NOTATE_quaverBoundary]     = CMidiFile::ppqnAdjust(DEFAULT_PPQN/2 + 10);
     cfg_param[NOTATE_crotchetBoundary]   = CMidiFile::ppqnAdjust(DEFAULT_PPQN + 10);
     cfg_param[NOTATE_minimBoundary]      = CMidiFile::ppqnAdjust(DEFAULT_PPQN*2 + 10);
+    cfg_param[NOTATE_threequaterBoundary]= CMidiFile::ppqnAdjust(DEFAULT_PPQN*3 + 10);
     cfg_param[NOTATE_semibreveBoundary]  = CMidiFile::ppqnAdjust(DEFAULT_PPQN*4 + 10);
 }
 
@@ -230,6 +231,8 @@ void CNotation::calculateScoreNoteLength()
             symbol->setNoteLength(PB_SYMBOL_crotchet);
         else if (midiDuration < cfg_param[NOTATE_minimBoundary] )
             symbol->setNoteLength(PB_SYMBOL_minim);
+        else if (midiDuration < cfg_param[NOTATE_threequaterBoundary] )
+            symbol->setNoteLength(PB_SYMBOL_threequater);
         else
             symbol->setNoteLength(PB_SYMBOL_semibreve);
     }
