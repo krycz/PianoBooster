@@ -626,7 +626,7 @@ void QtWindow::keyboardShortcuts()
     msg += displayShortCut("ShortCuts/PlayFromStart", tr("Play from start toggle"));
     msg += displayShortCut("ShortCuts/PlayPause", tr("Play Pause Toggle"));
     msg += displayShortCut("ShortCuts/Faster",  tr("Increase the speed by 5%"));
-    msg += displayShortCut("ShortCuts/Slower", tr("Increase the speed by 5%"));
+    msg += displayShortCut("ShortCuts/Slower", tr("Decrease the speed by 5%"));
     msg += displayShortCut("ShortCuts/NextSong", tr("Change to the Next Song"));
     msg += displayShortCut("ShortCuts/PreviousSong", tr("Change to the Previous Song"));
     msg += displayShortCut("ShortCuts/NextBook", tr("Change to the Next Book"));
