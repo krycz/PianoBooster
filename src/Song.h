@@ -95,6 +95,7 @@ private:
     CChord m_fakeChord;  // the chord played with the tab key
     CTrackList* m_trackList;
     QString m_songTitle;
+    QString m_songFilename;
 };
 
 #endif  // __SONG_H__

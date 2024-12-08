@@ -46,6 +46,7 @@ void CSong::loadSong(const QString & filename)
 {
     CNote::reset();
 
+    m_songFilename = filename;  // Add this line
     m_songTitle = filename;
     int index = m_songTitle.lastIndexOf("/");
     if (index >= 0)
@@ -161,27 +162,36 @@ void CSong::refreshScroll()
 
 eventBits_t CSong::task(qint64 ticks)
 {
+    // ppLogInfo("CSong::task called with ticks==%d", (int)ticks);
     realTimeEngine(ticks);
 
     while (true)
     {
-        if (m_reachedMidiEof == true)
+        if (m_reachedMidiEof == true) {
+            ppLogDebug("Reached MIDI EOF");  // Log EOF condition
             goto exitTask;
+        }
 
         while (true)
         {
             // Check that there is space
-            if (midiEventSpace() <= 10 || chordEventSpace() <= 10)
+            if (midiEventSpace() <= 10 || chordEventSpace() <= 10) {
+                ppLogDebug("Queue space low - midi: %d, chord: %d", 
+                          midiEventSpace(), chordEventSpace());
                 break;
+            }
 
             // and that the Score has space also
-            if (m_scoreWin->midiEventSpace() <= 100)
+            if (m_scoreWin->midiEventSpace() <= 100) {
+                ppLogDebug("Score space low: %d", 
+                          m_scoreWin->midiEventSpace());
                 break;
+            }
 
             // Read the next events
             CMidiEvent event = m_midiFile->readMidiEvent();
 
-            //ppLogTrace("Song event delta %d type 0x%x chan %d Note %d", event.deltaTime(), event.type(), event.channel(), event.note());
+            ppLogTrace("Song event delta %d type 0x%x chan %d Note %d", event.deltaTime(), event.type(), event.channel(), event.note());
 
             // Find the next chord
             if (m_findChord.findChord(event, getActiveChannel(), PB_PART_both) == true)
@@ -250,6 +260,46 @@ bool CSong::pcKeyPress(int key, bool down)
     CMidiEvent midi;
     const int cfg_pcKeyVolume = 64;
     const int cfg_pcKeyChannel = 1-1;
+
+    if (key == 'e') // 'e' moves back by one bar
+    {
+        if (down) {
+            bool wasPlaying = playingMusic();
+            int bar_number = getBarNumber();
+            ppLogInfo("Moving back from bar %d", bar_number);
+
+            if (bar_number > 0) {
+                setPlayFromBar(bar_number - 1);
+                playFromStartBar();
+
+
+                // playMusic(false);
+                // // allSoundOff();
+                // int left = CNote::leftHandChan();
+                // int right = CNote::rightHandChan();
+                // loadSong(m_songFilename);
+                // CNote::setChannelHands(left, right);
+
+                // realTimeEngine(0);
+                // setPlayFromBar(bar_number - 1);
+                // ppLogInfo("Rewinding to bar %d", bar_number - 1);
+                // realTimeEngine(0);
+
+                // // m_reachedMidiEof = false;
+
+                // // rewind();
+                // // regenerateChordQueue();
+                // // m_bar.reset();
+                // if (wasPlaying) {
+                //     ppLogInfo("Resuming playback");
+                //     playMusic(true);  // Resume playback if it was playing
+                //     realTimeEngine(0);
+                // }
+            }
+        }
+            
+        return true;
+    }
 
     if (key == 't') // the tab key on the PC fakes good notes
     {
