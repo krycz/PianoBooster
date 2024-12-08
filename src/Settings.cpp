@@ -48,6 +48,7 @@
 #include "GuiSidePanel.h"
 #include "QtWindow.h"
 #include "version.h"
+#include "resources/config.h"
 
 #if WITH_INTERNAL_FLUIDSYNTH
 #include "MidiDeviceFluidSynth.h"
@@ -60,11 +61,10 @@
 #define debugSettings(args)
 #endif
 
-CSettings::CSettings(QtWindow *mainWindow) : QSettings(CSettings::IniFormat, CSettings::UserScope, "PianoBooster", "Piano Booster"),
-                                 m_mainWindow(mainWindow)
+CSettings::CSettings()
+    : QSettings(CSettings::IniFormat, CSettings::UserScope, "PianoBooster", "Piano Booster")
+    , m_mainWindow(nullptr)
 {
-    // It is all done in the initialisation list
-
     m_advancedMode = false;
     m_pianistActive = false;
     m_noteNamesEnabled = value("Score/NoteNames", true ).toBool();
@@ -85,8 +85,9 @@ void CSettings::setDefaultValue(const QString & key, const QVariant & value )
     setValue(key, value);
 }
 
-void CSettings::init(CSong* song, GuiSidePanel* sidePanel, GuiTopBar* topBar)
+void CSettings::init(QtWindow *mainWindow, CSong* song, GuiSidePanel* sidePanel, GuiTopBar* topBar)
 {
+    m_mainWindow = mainWindow;
     m_song = song;
     m_guiSidePanel = sidePanel;
     m_guiTopBar = topBar;
@@ -271,6 +272,9 @@ void CSettings::saveXmlFile()
 
 void CSettings::updateTutorPage()
 {
+    if (!m_mainWindow) {
+        return;
+    }
     QFileInfo fileInfo(getCurrentSongLongFileName());
     const char* EXTN = ".html";
 
@@ -384,7 +388,7 @@ void CSettings::loadSettings()
 {
     unzipBoosterMusicBooks();
     // Set default values
-    setValue("PianoBooster/Version", PB_VERSION);
+    setValue("PianoBooster/Version", APP_VERSION);
     setDefaultValue("ShortCuts/LeftHand", "F2");
     setDefaultValue("ShortCuts/BothHands","F3");
     setDefaultValue("ShortCuts/RightHand","F4");
@@ -410,25 +414,14 @@ void CSettings::loadSettings()
 void CSettings::unzipBoosterMusicBooks()
 {
     // Set default value
-    const QString ZIPFILENAME("BoosterMusicBooks.zip");
+    static const auto ZIPFILENAME = QStringLiteral("BoosterMusicBooks.zip");
 
-    if (value("PianoBooster/MusicRelease", 0).toInt() < MUSIC_RELEASE)
+    if (m_mainWindow && value("PianoBooster/MusicRelease", 0).toInt() < MUSIC_RELEASE)
     {
-        QString musicSrcDir = QApplication::applicationDirPath() + "/";
-
-        ppLogTrace("unzipBoosterMusicBooks resourceDir1 %s", qPrintable(musicSrcDir));
-
-        if (!QFile::exists(musicSrcDir + ZIPFILENAME))
-        {
-#if defined (Q_OS_LINUX) || defined (Q_OS_UNIX)
-            musicSrcDir=Util::dataDir()+"/music/";
-#endif
-#ifdef Q_OS_DARWIN
-            musicSrcDir = QApplication::applicationDirPath() + "/../Resources/music/";
-#endif
+        auto musicSrcDir = QCoreApplication::applicationDirPath() + QChar('/');
+        if (!QFile::exists(musicSrcDir + ZIPFILENAME)) {
+            musicSrcDir = Util::dataDir(QStringLiteral("music"));
         }
-
-        ppLogInfo(qPrintable("applicationDirPath=" + QApplication::applicationDirPath()));
         ppLogTrace("resourceDir %s", qPrintable(musicSrcDir));
 
         QFileInfo zipFile(musicSrcDir +  ZIPFILENAME);
@@ -500,8 +493,10 @@ void CSettings::setCurrentSongName(const QString & name)
 
     m_guiSidePanel->refresh();
     m_guiTopBar->refresh(true);
-    m_mainWindow->setWindowTitle("Piano Booster - " + m_song->getSongTitle());
-    updateTutorPage();
+    if (m_mainWindow) {
+        m_mainWindow->setWindowTitle("Piano Booster - " + m_song->getSongTitle());
+        updateTutorPage();
+    }
 }
 
 void CSettings::setCurrentBookName(const QString & name, bool clearSongName)

@@ -29,6 +29,8 @@
 #ifndef __CFG_H__
 #define __CFG_H__
 
+#include <algorithm>
+
 #define OPTION_BENCHMARK_TEST     0
 #if OPTION_BENCHMARK_TEST
 #define BENCHMARK_INIT()        benchMarkInit()
@@ -48,22 +50,73 @@
 class CColor
 {
 public:
-    CColor() { red = green = blue = 0; }
+    constexpr CColor()
+        : red(0.0f)
+        , green(0.0f)
+        , blue(0.0f)
+    {}
 
-    CColor(double r, double g, double b)
+    constexpr CColor(float r, float g, float b)
+        : red(r)
+        , green(g)
+        , blue(b)
+    {}
+
+    constexpr CColor(double r, double g, double b)
+        : red(static_cast<float>(r))
+        , green(static_cast<float>(g))
+        , blue(static_cast<float>(b))
+    {}
+
+    constexpr bool operator==(CColor color)
     {
-        red = static_cast<float>(r);
-        green = static_cast<float>(g);
-        blue = static_cast<float>(b);
+        return red == color.red && green == color.green && blue == color.blue;
     }
+
+    constexpr void ensureBrightness(float v)
+    {
+        if (red < v && green < v && blue < v) {
+            red = std::max(red, v);
+            green = std::max(green, v);
+            blue = std::max(blue, v);
+        }
+    }
+
     float red, green, blue;
+};
 
-    bool operator==(CColor color)
-    {
-        if (red == color.red && green == color.green && blue == color.blue)
-            return true;
-        return false;
-    }
+enum class BuiltInColorTheme {
+    Default,
+    Light,
+};
+
+struct ColorTheme
+{
+    constexpr ColorTheme() = default;
+    ColorTheme &operator=(const ColorTheme &other) = default;
+    void load(BuiltInColorTheme builtInColorTheme);
+
+    CColor menuColor          = CColor(0.1, 0.6, 0.6);
+    CColor menuSelectedColor  = CColor(0.7, 0.7, 0.1);
+
+    CColor staveColor         = CColor(0.1, 0.7, 0.1);     // green
+    CColor staveColorDim      = CColor(0.15, 0.40, 0.15);  // grey
+    CColor noteColor          = CColor(0.1, 0.9, 0.1);     // green
+    CColor noteColorDim       = CColor(0.25, 0.45, 0.25);  // green
+    CColor playedGoodColor    = CColor(0.5, 0.6, 1.0);     // purple
+    CColor playedBadColor     = CColor(0.8, 0.3, 0.8);     // orange
+    CColor playedStoppedColor = CColor(1.0, 0.8, 0.0);     // bright orange
+    CColor backgroundColor    = CColor(0.0, 0.0, 0.0);     // black
+    CColor barMarkerColor     = CColor(0.3, 0.25, 0.25);   // grey
+    CColor beatMarkerColor    = CColor(0.1, 0.1, 0.1);     // grey
+    CColor pianoGoodColor     = playedGoodColor;
+    CColor pianoBadColor      = CColor(1.0, 0.0, 0.0);
+    CColor noteNameColor      = CColor(1.0, 1.0, 1.0);
+    CColor playingZoneBg      = CColor(0.0f, 0.0f, 0.3f);
+    CColor playingZoneMiddle  = CColor(0.0f, 0.0f, 0.8f);
+    CColor playingZoneBorder  = CColor(0.0f, 0.0f, 0.6f);
+    CColor textColor          = CColor(1.0f, 1.0f, 1.0f);
+    CColor timingMarkerColor  = CColor(1.0f, 1.0f, 1.0f);
 };
 
 /*!
@@ -89,23 +142,8 @@ public:
     static int chordNoteGap()      {return 10;} // all notes in a cord must be spaced less than this a gap
     static int chordMaxLength()    {return 20;} // the max time between the start and end of a cord
 
-    static CColor menuColor()        {return CColor(0.1, 0.6, 0.6);}
-    static CColor menuSelectedColor(){return CColor(0.7, 0.7, 0.1);}
-
-    static CColor staveColor()           {return CColor(0.1, 0.7, 0.1);} // green
-    static CColor staveColorDim()        {return CColor(0.15, 0.40, 0.15);} // grey
-    static CColor noteColor()            {return CColor(0.1, 0.9, 0.1);} // green
-    static CColor noteColorDim()         {return CColor(0.25, 0.45, 0.25);} // green
-    //static CColor playedGoodColor()    {return CColor(0.6, 0.6, 1.0);} // grey
-    static CColor playedGoodColor()      {return CColor(0.5, 0.6, 1.0);} // purple 0.6, 0.6, 1.0
-    static CColor playedBadColor()       {return CColor(0.8, 0.3, 0.8);} // orange 0.7, 0.0, 0.0
-    static CColor playedStoppedColor()   {return CColor(1.0, 0.8, 0.0);} // bright orange
-    static CColor backgroundColor()      {return CColor(0.0, 0.0, 0.0);} // black
-    static CColor barMarkerColor()       {return CColor(0.3, 0.25, 0.25);} // grey
-    static CColor beatMarkerColor()      {return CColor(0.25, 0.2, 0.2);} // grey
-    static CColor pianoGoodColor()      {return playedGoodColor();}
-    static CColor pianoBadColor()       {return CColor(1.0, 0.0, 0.0);}
-    static CColor noteNameColor()       {return CColor(1.0, 1.0, 1.0);}
+    static const ColorTheme &colorTheme() { return m_colorTheme; }
+    static void loadColorTheme(BuiltInColorTheme builtInColorTheme) { m_colorTheme.load(builtInColorTheme); }
 
     static void setDefaults() {
     #ifdef _WIN32
@@ -148,6 +186,7 @@ private:
     static int m_appX, m_appY, m_appWidth, m_appHeight;
     static const int m_playZoneEarly;
     static const int m_playZoneLate;
+    static ColorTheme m_colorTheme;
 };
 
 #endif //__CFG_H__

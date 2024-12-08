@@ -200,15 +200,15 @@ void GuiMidiSetupDialog::accept()
 {
     // save FluidSynth settings
     if (m_settings->getFluidSoundFontNames().size()==0){
-        m_settings->remove("FluidSynth");
+        m_settings->remove(QStringLiteral("FluidSynth"));
     }else{
-        m_settings->setValue("FluidSynth/masterGainSpin",masterGainSpin->value());
-        m_settings->setValue("FluidSynth/bufferSizeCombo", bufferSizeCombo->currentText());
-        m_settings->setValue("FluidSynth/bufferCountCombo", bufferCountCombo->currentText());
-        m_settings->setValue("FluidSynth/reverbCheck",reverbCheck->isChecked());
-        m_settings->setValue("FluidSynth/chorusCheck",chorusCheck->isChecked());
-        m_settings->setValue("FluidSynth/audioDriverCombo",audioDriverCombo->currentText());
-        m_settings->setValue("FluidSynth/sampleRateCombo",sampleRateCombo->currentText());
+        m_settings->setValue(QStringLiteral("FluidSynth/masterGainSpin"),masterGainSpin->value());
+        m_settings->setValue(QStringLiteral("FluidSynth/bufferSizeCombo"), bufferSizeCombo->currentText());
+        m_settings->setValue(QStringLiteral("FluidSynth/bufferCountCombo"), bufferCountCombo->currentText());
+        m_settings->setValue(QStringLiteral("FluidSynth/reverbCheck"),reverbCheck->isChecked());
+        m_settings->setValue(QStringLiteral("FluidSynth/chorusCheck"),chorusCheck->isChecked());
+        m_settings->setValue(QStringLiteral("FluidSynth/audioDriverCombo"),audioDriverCombo->currentText());
+        m_settings->setValue(QStringLiteral("FluidSynth/sampleRateCombo"),sampleRateCombo->currentText());
     }
 
     m_settings->saveSoundFontSettings();
@@ -218,14 +218,14 @@ void GuiMidiSetupDialog::accept()
     if (midiInputCombo->currentText().startsWith(tr("None")))
         CChord::setPianoRange(PC_KEY_LOWEST_NOTE, PC_KEY_HIGHEST_NOTE);
     else
-        CChord::setPianoRange(m_settings->value("Keyboard/LowestNote", 0).toInt(),
-                          m_settings->value("Keyboard/HighestNote", 127).toInt());
+        CChord::setPianoRange(m_settings->value(QStringLiteral("Keyboard/LowestNote"), 0).toInt(),
+                              m_settings->value(QStringLiteral("Keyboard/HighestNote"), 127).toInt());
 
     if (midiOutputCombo->currentIndex()==0){
-        m_settings->setValue("Midi/Output", "");
-        m_song->openMidiPort(CMidiDevice::MIDI_OUTPUT,"");
+        m_settings->setValue(QStringLiteral("Midi/Output"), QString());
+        m_song->openMidiPort(CMidiDevice::MIDI_OUTPUT, QString());
     }else{
-        m_settings->setValue("Midi/Output", midiOutputCombo->currentText());
+        m_settings->setValue(QStringLiteral("Midi/Output"), midiOutputCombo->currentText());
         m_song->openMidiPort(CMidiDevice::MIDI_OUTPUT, midiOutputCombo->currentText() );
     }
     m_settings->updateWarningMessages();
@@ -237,16 +237,16 @@ void GuiMidiSetupDialog::accept()
     {
         if( m_latencyFix> 0)
         {
-            int rightSound = m_settings->value("Keyboard/RightSound", Cfg::defaultRightPatch()).toInt();
-            m_settings->setValue("Keyboard/RightSoundPrevious", rightSound); // Save the current right sound
+            int rightSound = m_settings->value(QStringLiteral("Keyboard/RightSound"), Cfg::defaultRightPatch()).toInt();
+            m_settings->setValue(QStringLiteral("Keyboard/RightSoundPrevious"), rightSound); // Save the current right sound
             // Mute the Piano if we are using the latency fix;
-            m_settings->setValue("Keyboard/RightSound", 0);
+            m_settings->setValue(QStringLiteral("Keyboard/RightSound"), 0);
             m_song->setPianoSoundPatches( -1, -2); // -1 means no sound and -2 means ignore this parameter
         }
         else
         {
-            int previousRightSound = m_settings->value("Keyboard/RightSoundPrevious", Cfg::defaultRightPatch()).toInt();
-            m_settings->setValue("Keyboard/RightSound", previousRightSound);
+            int previousRightSound = m_settings->value(QStringLiteral("Keyboard/RightSoundPrevious"), Cfg::defaultRightPatch()).toInt();
+            m_settings->setValue(QStringLiteral("Keyboard/RightSound"), previousRightSound);
             m_song->setPianoSoundPatches(previousRightSound, -2); // -2 means ignore this parameter
         }
         m_latencyChanged = false;
@@ -257,11 +257,11 @@ void GuiMidiSetupDialog::accept()
 
 void GuiMidiSetupDialog::updateFluidInfoStatus()
 {
-    QStringList soundFontNames = m_settings->getFluidSoundFontNames();
+    const auto soundFontNames = m_settings->getFluidSoundFontNames();
     soundFontList->clear();
-    if (!m_settings->getFluidSoundFontNames().isEmpty())
+    if (!soundFontNames.isEmpty())
     {
-        QFileInfo fileInfo = QFileInfo(m_settings->getFluidSoundFontNames().at(0));
+        const auto fileInfo = QFileInfo(soundFontNames.first());
         if (fileInfo.exists())
         {
             soundFontList->addItem(fileInfo.fileName());
@@ -280,7 +280,7 @@ void GuiMidiSetupDialog::on_fluidLoadButton_clicked ( bool checked )
 {
     Q_UNUSED(checked)
 #if WITH_INTERNAL_FLUIDSYNTH
-    QString lastSoundFont = m_settings->value("LastSoundFontDir","").toString();
+    QString lastSoundFont = m_settings->value(QStringLiteral("LastSoundFontDir"), QString()).toString();
 
      if (lastSoundFont.isEmpty()) {
 

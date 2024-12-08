@@ -33,8 +33,6 @@
 CMidiDeviceRt::CMidiDeviceRt()
 {
     m_validConnection = false;
-    m_midiout = nullptr;
-    m_midiin = nullptr;
     m_midiPorts[0] = -1;
     m_midiPorts[1] = -1;
     m_rawDataIndex = 0;
@@ -43,39 +41,27 @@ CMidiDeviceRt::CMidiDeviceRt()
 
 CMidiDeviceRt::~CMidiDeviceRt()
 {
-    if (m_midiout!=nullptr) { delete m_midiout; }
-    if (m_midiin!=nullptr) {delete m_midiin; }
 }
 
 void CMidiDeviceRt::init()
 {
-    if (m_midiin == nullptr || m_midiout == nullptr) {
-        m_midiPorts[0] = -1;
-        m_midiPorts[1] = -1;
-        m_rawDataIndex = 0;
-        if (m_midiout!=nullptr) {
-            delete m_midiout;
-            m_midiout = nullptr;
-        }
-        try {
-            m_midiout = new RtMidiOut();
-        }
-        catch(RtMidiError &error){
-            error.printMessage();
-            return;
-        }
-
-        if (m_midiin!=nullptr) {
-            delete m_midiin;
-            m_midiin = nullptr;
-        }
-        try {
-            m_midiin = new RtMidiIn();
-        }
-        catch(RtMidiError &error){
-            error.printMessage();
-            return;
-        }
+    if (m_midiin && m_midiout) {
+        return;
+    }
+    m_midiPorts[0] = -1;
+    m_midiPorts[1] = -1;
+    m_rawDataIndex = 0;
+    try {
+        m_midiout = std::make_unique<RtMidiOut>();
+        m_midiout->setErrorCallback(handleRtMidiError);
+    } catch (const RtMidiError &error) {
+        error.printMessage();
+    }
+    try {
+        m_midiin = std::make_unique<RtMidiIn>();
+        m_midiin->setErrorCallback(handleRtMidiError);
+    } catch (const RtMidiError &error) {
+        error.printMessage();
     }
 }
 
@@ -91,31 +77,20 @@ QString CMidiDeviceRt::addIndexToString(const QString &name, int index)
 QStringList CMidiDeviceRt::getMidiPortList(midiType_t type)
 {
     init();
-    QStringList portNameList;
-    if (m_midiin == nullptr || m_midiout == nullptr) {
+    auto portNameList = QStringList();
+    if (!m_midiin || !m_midiout) {
         return portNameList;
     }
 
-    unsigned int nPorts;
-    QString name;
-    RtMidi* midiDevice;
+    auto *const midiDevice = type == MIDI_INPUT ? static_cast<RtMidi *>(m_midiin.get()) : static_cast<RtMidi *>(m_midiout.get());
+    const auto nPorts = midiDevice->getPortCount();
+    portNameList.reserve(nPorts);
 
-    if (type == MIDI_INPUT)
-        midiDevice = m_midiin;
-    else
-        midiDevice = m_midiout;
-
-    nPorts = midiDevice->getPortCount();
-
-    for(unsigned int i=0; i< nPorts && i < std::numeric_limits<int>::max(); ++i)
-    {
+    for (unsigned int i = 0; i < nPorts && i < std::numeric_limits<int>::max(); ++i) {
         // kotechnology creating indexed string from the post name
-        name = addIndexToString(midiDevice->getPortName(i).c_str(), static_cast<int>(i));
-        if (name.contains("RtMidi Output Client"))
-            continue;
-        if (name.contains("RtMidi Input Client"))
-            continue;
-         portNameList << name;
+        const auto name = addIndexToString(midiDevice->getPortName(i).c_str(), static_cast<int>(i));
+        if (!name.contains(QLatin1String("RtMidi Output Client")) && !name.contains(QLatin1String("RtMidi Input Client")))
+            portNameList << name;
     }
 
     return portNameList;
@@ -124,35 +99,24 @@ QStringList CMidiDeviceRt::getMidiPortList(midiType_t type)
 bool CMidiDeviceRt::openMidiPort(midiType_t type, const QString &portName)
 {
     init();
-    if (m_midiin == nullptr || m_midiout == nullptr) {
+    if (!m_midiin || !m_midiout || portName.isEmpty()) {
         return false;
     }
-
-    unsigned int nPorts;
-    QString name;
-    RtMidi* midiDevice;
-
-    if (portName.isEmpty())
-        return false;
 
     int dev;
-    if (type == MIDI_INPUT)
-    {
-        midiDevice = m_midiin;
+    RtMidi *midiDevice;
+    if (type == MIDI_INPUT) {
+        midiDevice = m_midiin.get();
         dev = 0;
-    }
-    else
-    {
-        midiDevice = m_midiout;
+    } else {
+        midiDevice = m_midiout.get();
         dev = 1;
     }
 
-    nPorts = midiDevice->getPortCount();
-
-    for(unsigned int i=0; i< nPorts && i <= std::numeric_limits<int>::max(); i++)
-    {
+    const auto nPorts = midiDevice->getPortCount();
+    for (unsigned int i = 0; i < nPorts && i <= std::numeric_limits<int>::max(); i++) {
         // kotechnology creating indexed string from the post name
-        name = addIndexToString(midiDevice->getPortName(i).c_str(), static_cast<int>(i));
+        const auto name = addIndexToString(midiDevice->getPortName(i).c_str(), static_cast<int>(i));
         if (name == portName) // Test for a match
         {
             if (m_midiPorts[dev] >= 0)
@@ -246,14 +210,7 @@ void CMidiDeviceRt::playMidiEvent(const CMidiEvent & event)
             return;
 
     }
-    try {
-        m_midiout->sendMessage( &message );
-    }
-    catch(RtMidiError &error){
-        error.printMessage();
-        m_validConnection = false;
-    }
-
+    m_midiout->sendMessage(&message);
     //event.printDetails(); // useful for debugging
 }
 
@@ -262,16 +219,9 @@ int CMidiDeviceRt::checkMidiInput()
 {
     if (m_midiPorts[0] < 0)
         return 0;
-
-    try {
-        m_stamp = m_midiin->getMessage( &m_inputMessage );
-    }
-    catch(RtMidiError &error){
-        error.printMessage();
-        m_validConnection = false;
+    m_stamp = m_midiin->getMessage( &m_inputMessage );
+    if (!m_validConnection)
         return 0;
-    }
-
     return m_inputMessage.size() > std::numeric_limits<int>::max() ? std::numeric_limits<int>::max() : static_cast<int>(m_inputMessage.size());
 }
 
@@ -365,4 +315,17 @@ int CMidiDeviceRt::midiSettingsGetInt(const QString &name)
 {
     Q_UNUSED(name)
     return 0;
+}
+
+void CMidiDeviceRt::handleRtMidiError(RtMidiError::Type type, const std::string &errorText, void *userData)
+{
+    static_cast<CMidiDeviceRt *>(userData)->handleRtMidiError(type, errorText);
+}
+
+void CMidiDeviceRt::handleRtMidiError(RtMidiError::Type type, const std::string &errorText)
+{
+    std::cerr
+        << (type == RtMidiError::WARNING || type == RtMidiError::DEBUG_WARNING ? "MIDI warning: " : "MIDI error: ")
+        << errorText << '\n';
+    m_validConnection = false;
 }

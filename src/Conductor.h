@@ -223,6 +223,7 @@ protected:
     bool validatePianistChord();
 
     bool seekingBarNumber() { return m_bar.seekingBarNumber();}
+    void doneSeekingBarNumber() { m_bar.doneSeekingBarNumber(); }
 
     int track2Channel(int track) {return m_track2ChannelLookUp[track];}
     void allSoundOff();

@@ -31,6 +31,11 @@
 #include "Settings.h"
 #include "Notation.h"
 
+#include <QGuiApplication>
+
+#include <cstdlib>
+#include <array>
+
 typedef unsigned int guint;
 typedef unsigned char guint8;
 
@@ -43,30 +48,27 @@ CDraw::CDraw(CSettings* settings)
 #endif
 {
 #ifndef NO_USE_FTGL
-    QStringList listPathFonts;
-
-    listPathFonts.append(Util::dataDir()+"/fonts/DejaVuSans.ttf");
-    listPathFonts.append(QApplication::applicationDirPath() + "/fonts/DejaVuSans.ttf");
-    listPathFonts.append(QApplication::applicationDirPath() + "/../Resources/fonts/DejaVuSans.ttf");
-    listPathFonts.append("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf");
-    listPathFonts.append("/usr/share/fonts/dejavu/DejaVuSans.ttf");
-    listPathFonts.append("/usr/share/fonts/TTF/dejavu/DejaVuSans.ttf");
-    listPathFonts.append("/usr/share/fonts/TTF/DejaVuSans.ttf");
-    listPathFonts.append("/usr/share/fonts/truetype/DejaVuSans.ttf");
-    listPathFonts.append("/usr/local/share/fonts/dejavu/DejaVuSans.ttf");
-
-    for (int i=0;i<listPathFonts.size();i++){
-        QFile file(listPathFonts.at(i));
-        if (file.exists()){
-            font = new FTBitmapFont(listPathFonts.at(i).toStdString().c_str());
+    static const auto fontPaths = std::array<QString, 7>{
+        Util::dataDir(QStringLiteral("fonts")) + QStringLiteral("/DejaVuSans.ttf"),
+        QStringLiteral("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"),
+        QStringLiteral("/usr/share/fonts/dejavu/DejaVuSans.ttf"),
+        QStringLiteral("/usr/share/fonts/TTF/dejavu/DejaVuSans.ttf"),
+        QStringLiteral("/usr/share/fonts/TTF/DejaVuSans.ttf"),
+        QStringLiteral("/usr/share/fonts/truetype/DejaVuSans.ttf"),
+        QStringLiteral("/usr/local/share/fonts/dejavu/DejaVuSans.ttf"),
+    };
+    for (const auto &path : fontPaths) {
+        if (QFile::exists(path)) {
+            font = new FTBitmapFont(path.toUtf8().data());
             break;
         }
     }
-    if (font==nullptr){
-        ppLogError("Font DejaVuSans.ttf was not found !");
-        exit(0);
+    if (!font) {
+        ppLogError("Font DejaVuSans.ttf was not found!");
+        exit(EXIT_FAILURE);
     }
-    font->FaceSize(FONT_SIZE, FONT_SIZE);
+    static const auto size = static_cast<unsigned int>(FONT_SIZE * qGuiApp->devicePixelRatio());
+    font->FaceSize(size, size);
 #endif
     m_settings = settings;
     m_displayHand = PB_PART_both;
@@ -93,9 +95,9 @@ void  CDraw::drawStaveExtentsion(CSymbol symbol, float x, int noteWidth, bool pl
     whichPart_t hand = symbol.getStavePos().getHand();
 
     if (playable)
-        drColor(Cfg::staveColor());
+        drColor(Cfg::colorTheme().staveColor);
     else
-        drColor(Cfg::staveColorDim());
+        drColor(Cfg::colorTheme().staveColorDim);
 
     glLineWidth (Cfg::staveThickness());
     glBegin(GL_LINES);
@@ -135,7 +137,7 @@ void CDraw::drawNoteName(int midiNote, float x, float y, int type)
 
     staveLookup_t item = CStavePos::midiNote2Name(midiNote);
 
-    drColor(Cfg::noteNameColor());
+    drColor(Cfg::colorTheme().noteNameColor);
 
     glLineWidth (1.0);
 
@@ -166,7 +168,7 @@ void CDraw::drawNoteName(int midiNote, float x, float y, int type)
                   scaleGlVertex( -2.52933f, x,   6.25291f, y);  //  1
                   scaleGlVertex( -2.50344f, x,   -6.25291f, y);  //  2
                   scaleGlVertex( 0.76991f, x,   -3.63422f, y);  //  3
-                  scaleGlVertex( 2.07925ff, x,   -1.67021f, y);  //  4
+                  scaleGlVertex( 2.07925f, x,   -1.67021f, y);  //  4
                   scaleGlVertex( 2.52933f, x,   0.25288f, y);  //  5
                   scaleGlVertex( 1.42458f, x,   1.07122f, y);  //  6
                   scaleGlVertex( -0.53943f, x,   0.90755f, y);  //  7
@@ -225,7 +227,7 @@ void CDraw::drawNoteName(int midiNote, float x, float y, int type)
           glBegin(GL_LINE_STRIP);
               //  letterF2
               scaleGlVertex( -2.55172f, x,   -4.434285f, y);  //  1
-              scaleGlVertex( -2.51956f, x,   4.433665ff, y);  //  2
+              scaleGlVertex( -2.51956f, x,   4.433665f, y);  //  2
               scaleGlVertex( 2.39942f, x,   4.434285f, y);  //  3
           glEnd();
           glBegin(GL_LINES);
@@ -300,38 +302,23 @@ void CDraw::drawNoteName(int midiNote, float x, float y, int type)
       break;
       }
 #else
-    const QChar flat = QChar(0x266D);
-    const QChar natural = QChar(0x266E);
-    const QChar sharp = QChar(0x266F);
-    const QString n[7] =
-     {
-      tr("C"),
-      tr("D"),
-      tr("E"),
-      tr("F"),
-      tr("G"),
-      tr("A"),
-      tr("B")
-     };
-
-    if(0<item.pianoNote && item.pianoNote < 8)
-     {
-      QString accident = QString("");
-      switch(item.accidental)
-       {
+    static const auto flat = QChar(u'♭'), natural = QChar(u'♮'), sharp = QChar(u'♯');
+    const auto n = std::array<QString, 7>{ tr("C"), tr("D"), tr("E"), tr("F"), tr("G"), tr("A"), tr("B") };
+    if (item.pianoNote > 0 && item.pianoNote < 8) {
+        auto note = n[static_cast<std::size_t>(item.pianoNote - 1)];
+        switch (item.accidental) {
         case -1:
-          accident = QString(flat);
-          break;
+            note += flat;
+            break;
         case 1:
-          accident = QString(sharp);
-          break;
+            note += sharp;
+            break;
         case 2:
-          accident = QString(natural);
-          break;
-       }
-      QString note = n[item.pianoNote-1] + accident;
-      renderText(x, y, note.toUtf8().data());
-     }
+            note += natural;
+            break;
+        }
+        renderText(x, y, note.toUtf8().data());
+    }
 #endif
 }
 
@@ -365,7 +352,7 @@ void CDraw::checkAccidental(CSymbol symbol, float x, float y)
 
     if (accidental != 0)
     {
-        //drColor (Cfg::lineColor());
+        //drColor (Cfg::colorTheme().lineColor);
         if (accidental == 1)
             drawSymbol(CSymbol(PB_SYMBOL_sharp, symbol.getStavePos()), x - xGap, y);
         else if (accidental == -1)
@@ -384,28 +371,28 @@ bool CDraw::drawNote(CSymbol* symbol, float x, float y, CSlot* slot, CColor colo
     //ppLogTrace("PB_SYMBOL_noteHead x %f y %f", x, y);
     if (!CChord::isNotePlayable(symbol->getNote(), 0))
     {
-        color = Cfg::noteColorDim();
+        color = Cfg::colorTheme().noteColorDim;
         playable = false;
     }
     drawStaveExtentsion(*symbol, x, 16, playable);
     drColor(color);
-    bool solidNoteHead = false;
-    bool showNoteStem = false;
-    int stemFlagCount = 0;
 
-    if (symbol->getType() <= PB_SYMBOL_semiquaver)
+    const auto noteLength = symbol->getType();
+    auto solidNoteHead = false;
+    auto showNoteStem = false;
+    auto stemFlagCount = 0;
+    if (noteLength <= PB_SYMBOL_demisemiquaver)
+        stemFlagCount = 3;
+    else if (noteLength <= PB_SYMBOL_semiquaver)
         stemFlagCount = 2;
-    else if (symbol->getType() <= PB_SYMBOL_quaver)
+    else if (noteLength <= PB_SYMBOL_quaver)
         stemFlagCount = 1;
-
-    if (symbol->getType() <= PB_SYMBOL_crotchet)
+    if (noteLength <= PB_SYMBOL_crotchet)
         solidNoteHead = true;
-
-    if (symbol->getType() <= PB_SYMBOL_minim)
+    if (noteLength <= PB_SYMBOL_threequater)
         showNoteStem = true;
 
-    if (showNoteStem)
-    {
+    if (showNoteStem) {
         if (!solidNoteHead)
             noteWidth += 1.0f;
         glLineWidth(2.0f);
@@ -416,9 +403,7 @@ bool CDraw::drawNote(CSymbol* symbol, float x, float y, CSlot* slot, CColor colo
     }
 
     float offset = stemLength;
-    while (stemFlagCount>0)
-    {
-
+    while (stemFlagCount > 0) {
         glLineWidth(2.0);
         glBegin(GL_LINE_STRIP);
             glVertex2f(noteWidth + x, offset  + y); // 1
@@ -428,8 +413,7 @@ bool CDraw::drawNote(CSymbol* symbol, float x, float y, CSlot* slot, CColor colo
         stemFlagCount--;
     }
 
-    if (solidNoteHead)
-    {
+    if (solidNoteHead) {
         glBegin(GL_POLYGON);
             glVertex2f(-7.0f + x,  2.0f + y); // 1
             glVertex2f(-5.0f + x,  4.0f + y); // 2
@@ -444,9 +428,7 @@ bool CDraw::drawNote(CSymbol* symbol, float x, float y, CSlot* slot, CColor colo
             glVertex2f(-8.0f + x, -3.0f + y); // 11
             glVertex2f(-8.0f + x, -0.0f + y); // 12
         glEnd();
-    }
-    else
-    {
+    } else {
         glLineWidth(2.0);
         glBegin(GL_LINE_STRIP);
             glVertex2f(-7.0f + x,  2.0f + y); // 1
@@ -464,6 +446,35 @@ bool CDraw::drawNote(CSymbol* symbol, float x, float y, CSlot* slot, CColor colo
         glEnd();
     }
 
+    // draw a circle after the half note to make it a three-quater note
+    const auto isDottedNote = (noteLength < PB_SYMBOL_breve) && ((noteLength - PB_SYMBOL_noteHead) % 2 == 0);
+    if (isDottedNote) {
+        static constexpr auto radius = 4.0f;
+        x += 15.0f;
+        glBegin(GL_POLYGON);
+        glVertex2f(1.0f * radius + x, 0.0f * radius + y);
+        glVertex2f(0.951057f * radius + x, 0.309017f * radius + y);
+        glVertex2f(0.809017f * radius + x, 0.587785f * radius + y);
+        glVertex2f(0.587785f * radius + x, 0.809017f * radius + y);
+        glVertex2f(0.309017f * radius + x, 0.951057f * radius + y);
+        glVertex2f(6.12323e-17f * radius + x, 1.0f * radius + y);
+        glVertex2f(-0.309017f * radius + x, 0.951056f * radius + y);
+        glVertex2f(-0.587785f * radius + x, 0.809017f * radius + y);
+        glVertex2f(-0.809017f * radius + x, 0.587785f * radius + y);
+        glVertex2f(-0.951057f * radius + x, 0.309017f * radius + y);
+        glVertex2f(-1.0f * radius + x, -3.74507e-07f * radius + y);
+        glVertex2f(-0.951056f * radius + x, -0.309017f * radius + y);
+        glVertex2f(-0.809017f * radius + x, -0.587786f * radius + y);
+        glVertex2f(-0.587785f * radius + x, -0.809017f * radius + y);
+        glVertex2f(-0.309016f * radius + x, -0.951057f * radius + y);
+        glVertex2f(7.49014e-07f * radius + x, -1.0f * radius + y);
+        glVertex2f(0.309018f * radius + x, -0.951056f * radius + y);
+        glVertex2f(0.587786f * radius + x, -0.809016f * radius + y);
+        glVertex2f(0.809018f * radius + x, -0.587784f * radius + y);
+        glVertex2f(0.951057f * radius + x, -0.309016f * radius + y);
+        glEnd();
+    }
+
     checkAccidental(*symbol, x, y);
 
     return playable;
@@ -471,15 +482,16 @@ bool CDraw::drawNote(CSymbol* symbol, float x, float y, CSlot* slot, CColor colo
 
 void CDraw::drawSymbol(CSymbol symbol, float x, float y, CSlot* slot)
 {
+    const auto &colorTheme = Cfg::colorTheme();
     CColor color = symbol.getColor();
     bool playable = true;
 
     if (m_displayHand != symbol.getHand() && m_displayHand != PB_PART_both)
     {
-        if (color == Cfg::noteColor())
-            color = Cfg::noteColorDim();
-        if (color == Cfg::staveColor())
-            color = Cfg::staveColorDim();
+        if (color == colorTheme.noteColor)
+            color = colorTheme.noteColorDim;
+        if (color == colorTheme.staveColor)
+            color = colorTheme.staveColorDim;
         playable = false;
     }
 
@@ -597,7 +609,7 @@ void CDraw::drawSymbol(CSymbol symbol, float x, float y, CSlot* slot)
             //ppLogTrace("PB_SYMBOL_noteHead x %f y %f", x, y);
             if (!CChord::isNotePlayable(symbol.getNote(), 0))
             {
-                color = Cfg::noteColorDim();
+                color = Cfg::colorTheme().noteColorDim;
                 playable = false;
             }
             drawStaveExtentsion(symbol, x, 16, playable);
@@ -605,7 +617,7 @@ void CDraw::drawSymbol(CSymbol symbol, float x, float y, CSlot* slot)
             // See forum post at link below from PianoBooster forum user Kory.
             // http://piano-booster.2625608.n2.nabble.com/Pianobooster-port-to-arm-linux-or-Android-td7572459.html
             // http://piano-booster.2625608.n2.nabble.com/Pianobooster-port-to-arm-linux-or-Android-td7572459.html#a7572676
-            if (m_settings->coloredNotes() && color == Cfg::noteColor()) //KORY added
+            if (m_settings->coloredNotes() && color == colorTheme.noteColor) //KORY added
             {
                 int note = symbol.getNote() % MIDI_OCTAVE;
                 switch (note)
@@ -671,7 +683,7 @@ void CDraw::drawSymbol(CSymbol symbol, float x, float y, CSlot* slot)
             drColor(CColor(0.3, 0.4, 0.4));
             glBegin(GL_LINE_STRIP);
                 glVertex2f(x,  y);
-                glVertex2f(x + CMidiFile::ppqnAdjust(symbol.getMidiDuration()) * HORIZONTAL_SPACING_FACTOR, y);
+                glVertex2f(x + CMidiFile::ppqnAdjust<float>(static_cast<float>(symbol.getMidiDuration())) * HORIZONTAL_SPACING_FACTOR, y);
             glEnd();
             drColor(color);
             */
@@ -681,7 +693,7 @@ void CDraw::drawSymbol(CSymbol symbol, float x, float y, CSlot* slot)
 
         case PB_SYMBOL_drum:
             if (!CChord::isNotePlayable(symbol.getNote(), 0))
-                color = Cfg::noteColorDim();
+                color = colorTheme.noteColorDim;
             drColor(color);
             glLineWidth (3.0f);
             glBegin(GL_LINES);
@@ -744,16 +756,16 @@ void CDraw::drawSymbol(CSymbol symbol, float x, float y, CSlot* slot)
         case PB_SYMBOL_barLine:
             x += BEAT_MARKER_OFFSET * HORIZONTAL_SPACING_FACTOR; // the beat markers where entered early so now move them correctly
             glLineWidth (4.0f);
-            drColor ((m_displayHand == PB_PART_left) ? Cfg::staveColorDim() : Cfg::staveColor());
+            drColor ((m_displayHand == PB_PART_left) ? colorTheme.staveColorDim : colorTheme.staveColor);
             oneLine(x, CStavePos(PB_PART_right, 4).getPosYRelative(), x, CStavePos(PB_PART_right, -4).getPosYRelative());
-            drColor ((m_displayHand == PB_PART_right) ? Cfg::staveColorDim() : Cfg::staveColor());
+            drColor ((m_displayHand == PB_PART_right) ? colorTheme.staveColorDim : colorTheme.staveColor);
             oneLine(x, CStavePos(PB_PART_left, 4).getPosYRelative(), x, CStavePos(PB_PART_left, -4).getPosYRelative());
             break;
 
         case PB_SYMBOL_barMarker:
             x += BEAT_MARKER_OFFSET * HORIZONTAL_SPACING_FACTOR; // the beat markers where entered early so now move them correctly
             glLineWidth (5.0f);
-            drColor(Cfg::barMarkerColor());
+            drColor(colorTheme.barMarkerColor);
             oneLine(x, CStavePos(PB_PART_right, m_beatMarkerHeight).getPosYRelative(), x, CStavePos(PB_PART_left, -m_beatMarkerHeight).getPosYRelative());
             glDisable (GL_LINE_STIPPLE);
             break;
@@ -761,7 +773,7 @@ void CDraw::drawSymbol(CSymbol symbol, float x, float y, CSlot* slot)
         case PB_SYMBOL_beatMarker:
             x += BEAT_MARKER_OFFSET * HORIZONTAL_SPACING_FACTOR; // the beat markers where entered early so now move them correctly
             glLineWidth (4.0);
-            drColor(Cfg::beatMarkerColor());
+            drColor(colorTheme.beatMarkerColor);
             oneLine(x, CStavePos(PB_PART_right, m_beatMarkerHeight).getPosYRelative(), x, CStavePos(PB_PART_left, -m_beatMarkerHeight).getPosYRelative());
             glDisable (GL_LINE_STIPPLE);
             break;
@@ -772,14 +784,14 @@ void CDraw::drawSymbol(CSymbol symbol, float x, float y, CSlot* slot)
                 float bottomY = CStavePos(PB_PART_left, -m_beatMarkerHeight).getPosY();
                 float early = static_cast<float>(Cfg::playZoneEarly()) * HORIZONTAL_SPACING_FACTOR;
                 float late = static_cast<float>(Cfg::playZoneLate()) * HORIZONTAL_SPACING_FACTOR;
-                //glColor3f (0.7f, 1.0f, 0.7f);
-                glColor3f (0.0f, 0.0f, 0.3f);
+                drColor(colorTheme.playingZoneBg);
                 glRectf(x-late, topY, x + early, bottomY);
                 glLineWidth (2.0f);
-                glColor3f (0.0f, 0.0f, 0.8f);
+                drColor(colorTheme.playingZoneMiddle);
                 oneLine(x, topY, x, bottomY );
                 glLineWidth (1.0f);
-                glColor3f (0.0f, 0.0f, 0.6f);
+                glColor3f (1.0f, 0.0f, 0.6f);
+                drColor(colorTheme.playingZoneBorder);
                 oneLine(x-late, topY, x-late, bottomY );
                 oneLine(x+early, topY, x+early, bottomY );
             }
@@ -800,7 +812,7 @@ void CDraw::drawSymbol(CSymbol symbol, float x, float y, CSlot* slot)
         {
             auto pianistX = static_cast<float>(symbol.getPianistTiming());
             pianistX =  x + pianistX * HORIZONTAL_SPACING_FACTOR;
-            drColor(CColor(1.0, 1.0, 1.0));
+            drColor(colorTheme.timingMarkerColor);
             glLineWidth (2.0f);
             glBegin(GL_LINES);
             glVertex2f( 4.0f + pianistX, 4.0f + y);
@@ -825,11 +837,20 @@ void CDraw::drawSlot(CSlot* slot)
     //int av8Left = slot->getAv8Left();
     for (int i=0; i < slot->length(); i++)
     {
-        stavePos.notePos(slot->getSymbol(i).getHand(), slot->getSymbol(i).getNote());
+    	whichPart_t hand = slot->getSymbol(i).getHand();
+    	int clef = PB_SYMBOL_gClef;
+    	if (hand == PB_PART_right) {
+    		clef = m_settings->value("SidePanel/clefRight").toInt();
+    	}
+    	else if (hand == PB_PART_left) {
+    		clef = m_settings->value("SidePanel/clefLeft").toInt();
+    	}
+    	CSymbol symbol = slot->getSymbol(i);
+    	symbol.setClef(clef);
+        stavePos.notePos(hand, symbol.getNote(), clef);
         //ppLogTrace ("compileSlot len %d id %2d next %2d time %2d type %2d note %2d", slot->length(), slot->m_displayListId,
         //slot->m_nextDisplayListId, slot->getDeltaTime(), slot->getSymbol(i).getType(), slot->getSymbol(i).getNote());
-
-        drawSymbol(slot->getSymbol(i), 0.0, stavePos.getPosYRelative()); // we add this  back when drawing this symbol
+        drawSymbol(symbol, 0.0, stavePos.getPosYRelative()); // we add this  back when drawing this symbol
     }
 }
 
@@ -840,7 +861,8 @@ void CDraw::drawStaves(float startX, float endX)
     glLineWidth (Cfg::staveThickness());
 
     /* select color for all lines  */
-    drColor ((m_displayHand != PB_PART_left) ? Cfg::staveColor() : Cfg::staveColorDim());
+    const auto &colorTheme = Cfg::colorTheme();
+    drColor ((m_displayHand != PB_PART_left) ? colorTheme.staveColor : colorTheme.staveColorDim);
     glBegin(GL_LINES);
 
     for (i = -4; i <= 4; i+=2 )
@@ -849,7 +871,7 @@ void CDraw::drawStaves(float startX, float endX)
         glVertex2f (startX, pos.getPosY());
         glVertex2f (endX, pos.getPosY());
     }
-    drColor ((m_displayHand != PB_PART_right) ? Cfg::staveColor() : Cfg::staveColorDim());
+    drColor ((m_displayHand != PB_PART_right) ? colorTheme.staveColor : colorTheme.staveColorDim);
     for (i = -4; i <= 4; i+=2 )
     {
         CStavePos pos = CStavePos(PB_PART_left, i);
@@ -866,6 +888,7 @@ void CDraw::drawKeySignature(int key)
     static constexpr int flatLookUpRight[]  = { 0, 3,-1, 2,-2, 1,-3};
     static constexpr int flatLookUpLeft[]   = {-2, 1,-3, 0,-4,-1,-5};
     static constexpr float gapX = 11.0f;
+    const auto &colorTheme = Cfg::colorTheme();
     CStavePos pos;
 
     if (key == NOT_USED)
@@ -878,13 +901,13 @@ void CDraw::drawKeySignature(int key)
         {
             if (i < arraySize(sharpLookUpRight))
             {
-                drColor ((m_displayHand != PB_PART_left) ? Cfg::noteColor() : Cfg::noteColorDim());
+                drColor ((m_displayHand != PB_PART_left) ? colorTheme.noteColor : colorTheme.noteColorDim);
                 pos = CStavePos(PB_PART_right, sharpLookUpRight[i]);
                 drawSymbol( CSymbol(PB_SYMBOL_sharp, pos), Cfg::keySignatureX() + gapX * static_cast<float>(i) );
             }
             if (i < arraySize(sharpLookUpLeft))
             {
-                drColor ((m_displayHand != PB_PART_right) ? Cfg::noteColor() : Cfg::noteColorDim());
+                drColor ((m_displayHand != PB_PART_right) ? colorTheme.noteColor : colorTheme.noteColorDim);
                 pos = CStavePos(PB_PART_left, sharpLookUpLeft[i]);
                 drawSymbol( CSymbol(PB_SYMBOL_sharp, pos), Cfg::keySignatureX() + gapX * static_cast<float>(i) );
             }
@@ -894,13 +917,13 @@ void CDraw::drawKeySignature(int key)
         {
             if (i < arraySize(flatLookUpRight))
             {
-                drColor ((m_displayHand != PB_PART_left) ? Cfg::noteColor() : Cfg::noteColorDim());
+                drColor ((m_displayHand != PB_PART_left) ? colorTheme.noteColor : colorTheme.noteColorDim);
                 pos = CStavePos(PB_PART_right, flatLookUpRight[i]);
                 drawSymbol( CSymbol(PB_SYMBOL_flat, pos), Cfg::keySignatureX() + gapX * static_cast<float>(i) );
             }
             if (i < arraySize(flatLookUpLeft))
             {
-                drColor ((m_displayHand != PB_PART_right) ? Cfg::noteColor() : Cfg::noteColorDim());
+                drColor ((m_displayHand != PB_PART_right) ? colorTheme.noteColor : colorTheme.noteColorDim);
                 pos = CStavePos(PB_PART_left, flatLookUpLeft[i]);
                 drawSymbol( CSymbol(PB_SYMBOL_flat, pos), Cfg::keySignatureX() + gapX * static_cast<float>(i) );
             }

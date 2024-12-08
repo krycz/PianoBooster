@@ -26,9 +26,17 @@
 
 #include "GlView.h"
 #include "QtWindow.h"
-#include "version.h"
+#include "resources/config.h"
 
+#include <qtutilities/settingsdialog/optioncategory.h>
+#include <qtutilities/settingsdialog/optioncategorymodel.h>
+#include <qtutilities/settingsdialog/qtsettings.h>
+#include <qtutilities/settingsdialog/settingsdialog.h>
+#include <qtutilities/resources/resources.h>
+
+#include <QApplication>
 #include <QDebug>
+#include <QPixmap>
 #include <QSurfaceFormat>
 #include <QStringBuilder>
 
@@ -56,9 +64,12 @@ static int set_realtime_priority(int policy, int prio)
 }
 #endif
 
-QtWindow::QtWindow()
+QtWindow::QtWindow(CSettings *settings, QtUtilities::QtSettings *qtSettings, QWidget *parent)
+    : QMainWindow(parent)
+    , m_settings(settings)
+    , m_qtSettings(qtSettings)
+    , m_settingsDlg(nullptr)
 {
-    m_settings = new CSettings(this);
     setWindowIcon(QIcon(":/images/pianobooster.png"));
     setWindowTitle(tr("Piano Booster"));
 
@@ -96,21 +107,35 @@ QtWindow::QtWindow()
     m_song = m_glWidget->getSongObject();
     m_score = m_glWidget->getScoreObject();
 
-    QHBoxLayout *mainLayout = new QHBoxLayout;
-    QVBoxLayout *columnLayout = new QVBoxLayout;
+    // setup dock widget with side panel
+    m_sidePanelDockWidget = new QDockWidget(this);
+#if defined(Q_OS_WINDOWS) || defined(Q_OS_MAC)
+    constexpr auto dockFeatures = QDockWidget::DockWidgetMovable | QDockWidget::DockWidgetFloatable;
+#else
+    auto dockFeatures = static_cast<QDockWidget::DockWidgetFeatures>(QDockWidget::DockWidgetMovable);
+    if (QGuiApplication::platformName().compare(QLatin1String("wayland"), Qt::CaseInsensitive)) {
+        // enable floating windows only on non-Wayland platforms as one can never put a floating window back under Wayland
+        dockFeatures |= QDockWidget::DockWidgetFloatable;
+    } else {
+        // ensure currently floating windows (e.g. from the last X11 session) aren't floating anymore under Wayland
+        m_sidePanelDockWidget->setFloating(false);
+    }
+#endif
+    m_sidePanelDockWidget->setFeatures(dockFeatures);
+    m_sidePanelDockWidget->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
+    m_sidePanelDockWidget->setWidget(m_sidePanel = new GuiSidePanel(this, m_settings));
+    m_sidePanelDockWidget->setWindowTitle(tr("Options"));
 
-    m_sidePanel = new GuiSidePanel(this, m_settings);
     m_topBar = new GuiTopBar(this, m_settings);
     m_tutorWindow = new QTextBrowser(this);
     m_tutorWindow->hide();
 
-    m_settings->init(m_song, m_sidePanel, m_topBar);
+    m_settings->init(this, m_song, m_sidePanel, m_topBar);
 
-    mainLayout->addWidget(m_sidePanel);
+    QVBoxLayout *columnLayout = new QVBoxLayout;
     columnLayout->addWidget(m_topBar);
     columnLayout->addWidget(m_glWidget);
     columnLayout->addWidget(m_tutorWindow);
-    mainLayout->addLayout(columnLayout);
 
     m_song->init2(m_score, m_settings);
 
@@ -118,9 +143,10 @@ QtWindow::QtWindow()
     m_topBar->init(m_song);
 
     QWidget *centralWin = new QWidget();
-    centralWin->setLayout(mainLayout);
+    centralWin->setLayout(columnLayout);
 
     setCentralWidget(centralWin);
+    addDockWidget(Qt::LeftDockWidgetArea, m_sidePanelDockWidget);
 
     m_glWidget->setFocus(Qt::ActiveWindowFocusReason);
 
@@ -129,6 +155,7 @@ QtWindow::QtWindow()
 
     m_song->setLatencyFix(m_settings->value("Midi/Latency", 0).toInt());
 
+    Cfg::experimentalNoteLength = m_settings->value("Score/ShowNoteLength", Cfg::experimentalNoteLength).toBool();
     m_song->cfg_timingMarkersFlag = m_settings->value("Score/TimingMarkers", m_song->cfg_timingMarkersFlag ).toBool();
     m_song->cfg_stopPointMode = static_cast<stopPointMode_t> (m_settings->value("Score/StopPointMode", m_song->cfg_stopPointMode ).toInt());
     m_song->cfg_rhythmTapping = static_cast<rhythmTapping_t> (m_settings->value("Score/RtyhemTappingMode", m_song->cfg_rhythmTapping ).toInt());
@@ -159,7 +186,6 @@ void QtWindow::init()
 
 QtWindow::~QtWindow()
 {
-    delete m_settings;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -178,7 +204,7 @@ void QtWindow::displayUsage()
 
 int QtWindow::decodeIntegerParam(const QString &arg, int defaultParam)
 {
-    int n = arg.lastIndexOf('=');
+    const auto n = arg.lastIndexOf(QChar('='));
     if (n == -1 || (n + 1) >= arg.size())
         return defaultParam;
     bool ok;
@@ -190,7 +216,7 @@ int QtWindow::decodeIntegerParam(const QString &arg, int defaultParam)
 
 bool QtWindow::validateIntegerParam(const QString &arg)
 {
-    int n = arg.lastIndexOf('=');
+    const auto n = arg.lastIndexOf(QChar('='));
     if (n == -1 || (n + 1) >= arg.size())
         return false;
     bool ok;
@@ -290,7 +316,7 @@ void QtWindow::decodeCommandLine()
             }
             else if (arg.startsWith("-v") || arg.startsWith("--version"))
             {
-                fprintf(stdout, "pianobooster Version " PB_VERSION"\n");
+                fprintf(stdout, "pianobooster Version " APP_VERSION "\n");
                 exit(0);
             }
             else
@@ -320,21 +346,23 @@ void QtWindow::addShortcutAction(const QString & key, const char * method)
 
 void QtWindow::createActions()
 {
-    m_openAct = new QAction(QIcon(":/images/open.png"), tr("&Open..."), this);
+    m_openAct = new QAction(QIcon::fromTheme(QStringLiteral("document-open"), QIcon(QStringLiteral(":/images/breeze/document-open.svg"))), tr("&Open..."), this);
     m_openAct->setShortcut(tr("Ctrl+O"));
     m_openAct->setToolTip(tr("Open an existing file"));
     connect(m_openAct, SIGNAL(triggered()), this, SLOT(open()));
 
-    m_exitAct = new QAction(tr("E&xit"), this);
+    m_exitAct = new QAction(QIcon::fromTheme(QStringLiteral("application-exit")), tr("E&xit"), this);
     m_exitAct->setShortcut(tr("Ctrl+Q"));
     m_exitAct->setToolTip(tr("Exit the application"));
     connect(m_exitAct, SIGNAL(triggered()), this, SLOT(close()));
 
-    m_aboutAct = new QAction(tr("&About"), this);
-    m_aboutAct->setToolTip(tr("Show the application's About box"));
-    connect(m_aboutAct, SIGNAL(triggered()), this, SLOT(about()));
+    m_aboutAct = new QAction(QIcon::fromTheme(QStringLiteral("help-about-symbolic")), tr("&About Piano Booster"), this);
+    m_aboutAct->setToolTip(tr("Show the application's about box"));
+    connect(m_aboutAct, &QAction::triggered, this, &QtWindow::about);
+    m_aboutQtAct = new QAction(QIcon::fromTheme(QStringLiteral("qtcreator")), tr("About Qt"), this);
+    connect(m_aboutQtAct, &QAction::triggered, this, &QApplication::aboutQt);
 
-    m_shortcutAct = new QAction(tr("&PC Shortcut Keys"), this);
+    m_shortcutAct = new QAction(QIcon::fromTheme(QStringLiteral("help-keybord-shortcuts")), tr("&PC Shortcut Keys"), this);
     m_shortcutAct->setToolTip(tr("The PC Keyboard shortcut keys"));
     connect(m_shortcutAct, SIGNAL(triggered()), this, SLOT(keyboardShortcuts()));
 
@@ -348,13 +376,13 @@ void QtWindow::createActions()
     m_setupKeyboardAct->setToolTip(tr("Change the piano keyboard settings"));
     connect(m_setupKeyboardAct, SIGNAL(triggered()), this, SLOT(showKeyboardSetup()));
 
-    m_fullScreenStateAct = new QAction(tr("&Fullscreen"), this);
+    m_fullScreenStateAct = new QAction(QIcon::fromTheme(QStringLiteral("view-fullscreen")), tr("&Fullscreen"), this);
     m_fullScreenStateAct->setToolTip(tr("Fullscreen mode"));
     m_fullScreenStateAct->setShortcut(tr("F11"));
     m_fullScreenStateAct->setCheckable(true);
     connect(m_fullScreenStateAct, SIGNAL(triggered()), this, SLOT(onFullScreenStateAct()));
 
-    m_sidePanelStateAct = new QAction(tr("&Show the Side Panel"), this);
+    m_sidePanelStateAct = new QAction(QIcon::fromTheme(QStringLiteral("view-left-pane-symbolic")), tr("&Show the Side Panel"), this);
     m_sidePanelStateAct->setToolTip(tr("Show the Left Side Panel"));
     m_sidePanelStateAct->setShortcut(tr("F12"));
     m_sidePanelStateAct->setCheckable(true);
@@ -370,14 +398,15 @@ void QtWindow::createActions()
     }
     connect(m_viewPianoKeyboard, SIGNAL(triggered()), this, SLOT(onViewPianoKeyboard()));
 
-    m_setupPreferencesAct = new QAction(tr("&Preferences ..."), this);
-    m_setupPreferencesAct->setToolTip(tr("Settings"));
-    m_setupPreferencesAct->setShortcut(tr("Ctrl+P"));
-    connect(m_setupPreferencesAct, SIGNAL(triggered()), this, SLOT(showPreferencesDialog()));
+    m_setupUISettingsAct = new QAction(tr("&UI settings ..."), this);
+    m_setupUISettingsAct->setToolTip(tr("UI-related settings"));
+    m_setupUISettingsAct->setShortcut(tr("Ctrl+U"));
+    connect(m_setupUISettingsAct, &QAction::triggered, this, &QtWindow::showUISettingsDialog);
 
     m_songDetailsAct = new QAction(tr("Song &Details ..."), this);
     m_songDetailsAct->setToolTip(tr("Song Settings"));
     m_songDetailsAct->setShortcut(tr("Ctrl+D"));
+    m_songDetailsAct->setIcon(QIcon::fromTheme(QStringLiteral("music-note-16th")));
     connect(m_songDetailsAct, SIGNAL(triggered()), this, SLOT(showSongDetailsDialog()));
 
     QAction* act = new QAction(this);
@@ -422,11 +451,29 @@ void QtWindow::createMenus()
     m_fileMenu->addAction(m_exitAct);
     updateRecentFileActions();
 
+    m_colorThemeMenu = new QMenu(tr("Color theme"), this);
+    m_colorThemeActGrp = new QActionGroup(this);
+    m_colorThemeActGrp->setExclusive(true);
+    m_colorThemeMenu->addAction(tr("Default"))->setActionGroup(m_colorThemeActGrp);
+    m_colorThemeMenu->addAction(tr("Light"))->setActionGroup(m_colorThemeActGrp);
+    m_colorThemeMenu->setIcon(QIcon::fromTheme(QStringLiteral("color-profile")));
+    const auto &actions = m_colorThemeActGrp->actions();
+    for (auto *const action : actions) {
+        action->setCheckable(true);
+    }
+    connect(m_colorThemeActGrp, &QActionGroup::triggered, this, &QtWindow::changeColorTheme);
+    const auto configuredThemeIndex = m_settings->value("View/BuiltInThemeIndex").toInt();
+    auto *const configuredThemeAction = actions[configuredThemeIndex >= actions.size() ? 0 : configuredThemeIndex];
+    configuredThemeAction->setChecked(true);
+    Cfg::loadColorTheme(static_cast<BuiltInColorTheme>(configuredThemeIndex));
+    m_glWidget->reportColorThemeChange();
+
     m_viewMenu = menuBar()->addMenu(tr("&View"));
     m_viewMenu->setToolTipsVisible(true);
     m_viewMenu->addAction(m_sidePanelStateAct);
     m_viewMenu->addAction(m_fullScreenStateAct);
     m_viewMenu->addAction(m_viewPianoKeyboard);
+    m_viewMenu->addMenu(m_colorThemeMenu);
 
     m_songMenu = menuBar()->addMenu(tr("&Song"));
     m_songMenu->setToolTipsVisible(true);
@@ -436,7 +483,9 @@ void QtWindow::createMenus()
     m_setupMenu->setToolTipsVisible(true);
     m_setupMenu->addAction(m_setupMidiAct);
     m_setupMenu->addAction(m_setupKeyboardAct);
-    m_setupMenu->addAction(m_setupPreferencesAct);
+    if (m_qtSettings) {
+        m_setupMenu->addAction(m_setupUISettingsAct);
+    }
 
     m_helpMenu = menuBar()->addMenu(tr("&Help"));
     m_helpMenu->setToolTipsVisible(true);
@@ -444,16 +493,19 @@ void QtWindow::createMenus()
     QAction* act;
     act = new QAction(tr("&Help"), this);
     act->setToolTip(tr("Piano Booster Help"));
+    act->setIcon(QIcon::fromTheme(QStringLiteral("help-hint")));
     connect(act, SIGNAL(triggered()), this, SLOT(help()));
     m_helpMenu->addAction(act);
 
     act = new QAction(tr("&Website"), this);
     act->setToolTip(tr("Piano Booster Website"));
+    act->setIcon(QIcon::fromTheme(QStringLiteral("globe")));
     connect(act, SIGNAL(triggered()), this, SLOT(website()));
     m_helpMenu->addAction(act);
 
     m_helpMenu->addAction(m_shortcutAct);
     m_helpMenu->addAction(m_aboutAct);
+    m_helpMenu->addAction(m_aboutQtAct);
 }
 
 void QtWindow::openRecentFile()
@@ -461,6 +513,14 @@ void QtWindow::openRecentFile()
     QAction *action = qobject_cast<QAction *>(sender());
      if (action)
          m_settings->openSongFile(action->data().toString());
+}
+
+void QtWindow::changeColorTheme(QAction *triggeredAction)
+{
+    const auto builtInThemeIndex = m_colorThemeActGrp->actions().indexOf(triggeredAction);
+    Cfg::loadColorTheme(static_cast<BuiltInColorTheme>(builtInThemeIndex));
+    m_settings->setValue("View/BuiltInThemeIndex", builtInThemeIndex);
+    m_glWidget->reportColorThemeChange();
 }
 
 void QtWindow::showMidiSetup(){
@@ -475,15 +535,42 @@ void QtWindow::showMidiSetup(){
     m_glWidget->startTimerEvent();
 }
 
+void QtWindow::showUISettingsDialog()
+{
+    if (!m_settingsDlg) {
+        m_settingsDlg = new QtUtilities::SettingsDialog(this);
+        m_settingsDlg->setWindowTitle(tr("UI settings"));
+        auto *const category = new QtUtilities::OptionCategory;
+        auto *const preferencesPage = new GuiPreferencesOptionPage;
+        preferencesPage->init(m_song, m_settings, m_glWidget);
+        auto pages = QList<QtUtilities::OptionPage *>({preferencesPage});
+        if (m_qtSettings) {
+            pages << new QtUtilities::QtAppearanceOptionPage(*m_qtSettings);
+        }
+        category->assignPages(pages);
+        m_settingsDlg->setSingleCategory(category);
+        connect(m_settingsDlg, &QtUtilities::SettingsDialog::applied, this, [this] {
+            if (m_qtSettings) {
+                m_qtSettings->apply();
+                m_qtSettings->save(*m_settings);
+            }
+            refreshTranslate();
+        });
+    }
+    if (m_settingsDlg->isHidden()) {
+         m_settingsDlg->showNormal();
+    } else {
+         m_settingsDlg->activateWindow();
+    }
+}
+
 // load the recent file list from the config file into the file menu
 void QtWindow::updateRecentFileActions()
 {
+    const auto files = m_settings->value("RecentFileList").toStringList();
+    const auto numRecentFiles = qMin(files.size(), maxRecentFiles());
 
-    QStringList files = m_settings->value("RecentFileList").toStringList();
-
-    int numRecentFiles = qMin(files.size(), maxRecentFiles());
-
-    for (int i = 0; i < numRecentFiles; ++i) {
+    for (auto i = 0; i < numRecentFiles; ++i) {
         QString text = tr("&%1 %2").arg(i + 1).arg(strippedName(files[i]));
         if (m_recentFileActs[i] == nullptr)
             break;
@@ -492,7 +579,7 @@ void QtWindow::updateRecentFileActions()
         m_recentFileActs[i]->setVisible(true);
     }
 
-    for (int j = numRecentFiles; j < maxRecentFiles(); ++j) {
+    for (auto j = numRecentFiles; j < maxRecentFiles(); ++j) {
         if (m_recentFileActs[j] == nullptr)
             break;
         m_recentFileActs[j]->setVisible(false);
@@ -569,27 +656,32 @@ void QtWindow::help()
 
 void QtWindow::about()
 {
-    QMessageBox msgBox(this);
-    msgBox.setWindowTitle (tr("About Piano Booster"));
+    auto logo = QPixmap(QStringLiteral(":/images/pianobooster.png"));
+    auto msgBox = QMessageBox(this);
+    msgBox.setMinimumWidth(600);
+    msgBox.setWindowTitle(tr("About Piano Booster"));
+    msgBox.setIconPixmap(logo.scaledToWidth(64, Qt::SmoothTransformation));
     msgBox.setText(
-            tr("<b>PianoBooster - Version %1</b> <br><br>").arg(PB_VERSION) %
+            tr("<b>PianoBooster - Version %1</b> <br><br>").arg(APP_VERSION) %
             tr("<b>Boost</b> your <b>Piano</b> playing skills!<br><br>") %
             QStringLiteral("<a href=\"https://www.pianobooster.org/\" ><b>https://www.pianobooster.org/</b></a><br><br>") %
             tr("Copyright(c) L. J. Barman, 2008-2020; All rights reserved.<br>") %
             tr("Copyright(c) Fabien Givors, 2018-2019; All rights reserved.<br>") %
-            tr("Copyright(c) Marius Kittler, 2021-2022; All rights reserved.<br>") %
+            tr("Copyright(c) Marius Kittler, 2021-2024; All rights reserved.<br>") %
             QStringLiteral("<br>") %
             tr("This program is made available "
                 "under the terms of the GNU General Public License version 3 as published by "
                 "the Free Software Foundation.<br><br>"
-            )
+            ) %
             #ifdef USE_BUNDLED_RTMIDI
-             %
             tr("This program also contains RtMIDI: realtime MIDI i/o C++ classes<br>") %
-            tr("Copyright(c) Gary P. Scavone, 2003-2019; All rights reserved.")
+            tr("Copyright (c) 2003-2023 Gary P. Scavone") %
+            QStringLiteral("<br><br>") %
             #endif
+            tr("Fallback icons from <a href=\"https://invent.kde.org/frameworks/breeze-icons\">KDE/Breeze</a> "
+               "project (copyright © 2014 Uri Herrera <uri_herrera@nitrux.in> and others, see the according %1)").arg(
+               QStringLiteral("<a href=\"" APP_URL "/blob/custom/LICENSE.LESSER\">LGPL-3.0 license</a>"))
     );
-    msgBox.setMinimumWidth(600);
     msgBox.exec();
 }
 
@@ -670,7 +762,6 @@ void QtWindow::writeSettings()
 {
     m_settings->setValue("Window/Pos", pos());
     m_settings->setValue("Window/Size", size());
-    m_settings->writeSettings();
 }
 
 void QtWindow::closeEvent(QCloseEvent *event)
@@ -747,14 +838,8 @@ void QtWindow::loadTutorHtml(const QString & name)
 
 }
 
-void QtWindow::refreshTranslate(){
+void QtWindow::refreshTranslate() {
 #ifndef NO_LANGS
-    QString locale = m_settings->selectedLangauge();
-
-    qApp->removeTranslator(&translator);
-    qApp->removeTranslator(&translatorMusic);
-    qApp->removeTranslator(&qtTranslator);
-
     // save original
     if (listWidgetsRetranslateUi.size()==0){
         QList<QWidget*> l2 = this->findChildren<QWidget *>();
@@ -778,44 +863,15 @@ void QtWindow::refreshTranslate(){
         }
     }
 
-    QString translationsDir = QApplication::applicationDirPath() + "/translations/";
-
-    QFile fileTestLocale(translationsDir);
-    if (!fileTestLocale.exists()){
- #if defined (Q_OS_LINUX) || defined (Q_OS_UNIX)
-        translationsDir=Util::dataDir()+"/translations/";
- #endif
- #ifdef Q_OS_DARWIN
-        translationsDir=QApplication::applicationDirPath() + "/../Resources/translations/";
- #endif
-    }
-    ppLogInfo("Translations loaded from '%s'",  qPrintable(translationsDir));
-
-    // set translator for app
-    auto ok = true;
-    if (!translator.load(QSTR_APPNAME + QString("_") + locale , translationsDir))
-        ok = ok & translator.load(QSTR_APPNAME + QString("_") + locale, QApplication::applicationDirPath());
-    qApp->installTranslator(&translator);
-
-    // set translator for music
-    if (!translatorMusic.load(QString("music_") + locale , translationsDir))
-       if (!translatorMusic.load(QString("music_") + locale, QApplication::applicationDirPath()  + "/translations/"))
-           ok = ok & translatorMusic.load(QString("music_") + locale, QApplication::applicationDirPath());
-    qApp->installTranslator(&translatorMusic);
-
-    // set translator for default widget's text (for example: QMessageBox's buttons)
-#ifdef __WIN32
-    ok = ok & qtTranslator.load("qt_"+locale, translationsDir);
-#elif QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
-    ok = ok & qtTranslator.load("qt_"+locale, QLibraryInfo::path(QLibraryInfo::TranslationsPath));
-#else
-    ok = ok & qtTranslator.load("qt_"+locale, QLibraryInfo::location(QLibraryInfo::TranslationsPath));
-#endif
-    qApp->installTranslator(&qtTranslator);
-
-    if (!ok) {
-        qDebug() << "Unable to load all translations";
-    }
+    static const auto &translationsDir = [] {
+        return QtUtilities::TranslationFiles::additionalTranslationFilePath() = Util::dataDir(QStringLiteral("translations"));
+    }();
+    const auto locale = m_settings->selectedLangauge();
+    QtUtilities::TranslationFiles::clearTranslationFiles();
+    QtUtilities::TranslationFiles::loadApplicationTranslationFile(QString(), QSTR_APPNAME, locale);
+    QtUtilities::TranslationFiles::loadApplicationTranslationFile(QString(), QStringLiteral("qtutilities"), QLocale(locale).name());
+    QtUtilities::TranslationFiles::loadApplicationTranslationFile(QString(), QStringLiteral("music"), locale);
+    QtUtilities::TranslationFiles::loadQtTranslationFile({QStringLiteral("qtbase")}, locale);
 
     // retranslate UI
     QList<QWidget*> l2 = this->findChildren<QWidget *>();
@@ -838,6 +894,5 @@ void QtWindow::refreshTranslate(){
     m_topBar->updateTranslate();
     m_settings->updateWarningMessages();
     m_settings->updateTutorPage();
-
 #endif
 }

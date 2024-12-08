@@ -43,9 +43,9 @@ class CSettings : public QSettings
 {
 
 public:
-    CSettings(QtWindow *mainWindow);
+    explicit CSettings();
 
-    void init(CSong* song, GuiSidePanel* sidePanel, GuiTopBar* topBar);
+    void init(QtWindow *mainWindow, CSong* song, GuiSidePanel* sidePanel, GuiTopBar* topBar);
 
     /// returns true if the user wants to see the note names
     bool isNoteNamesEnabled() { return m_noteNamesEnabled; }
@@ -149,11 +149,11 @@ public:
     void updateWarningMessages();
 
     QString selectedLangauge() {
-        QString locale = value("General/lang","").toString();
+        auto locale = value(QStringLiteral("General/lang"), QString()).toString();
         if (locale.isEmpty()) {
             locale = QLocale::system().bcp47Name();
-            int n = locale.indexOf("_");
-            if ((n > 0)) {
+            const auto n = locale.indexOf(QChar('_'));
+            if (n > 0) {
                 locale = locale.left(n);
             }
         }
@@ -193,7 +193,6 @@ private:
     QDomElement m_domHand;      // The saved settings for each hand
 
     QtWindow *m_mainWindow;
-
     CSong* m_song;
     GuiSidePanel* m_guiSidePanel;
     GuiTopBar* m_guiTopBar;

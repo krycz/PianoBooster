@@ -19,36 +19,43 @@
 
 ****************************************************************************/
 
+#include <qtutilities/settingsdialog/qtsettings.h>
+#include <qtutilities/resources/resources.h>
+
 #include <QApplication>
 
+#include <cstdio>
 #include <cstdlib>
 
 #include "QtWindow.h"
-#include "version.h"
+#include "Settings.h"
+#include "resources/config.h"
 
-int main(int argc, char *argv[]){
-    QCoreApplication::setOrganizationName(QStringLiteral("PianoBooster"));
-    QCoreApplication::setOrganizationDomain(QStringLiteral("https://github.com/pianobooster/PianoBooster"));
-    QCoreApplication::setApplicationName(QStringLiteral("Piano Booster"));
-    QCoreApplication::setApplicationVersion(QStringLiteral(PB_VERSION));
-    QGuiApplication::setDesktopFileName(QStringLiteral("pianobooster"));
+int main(int argc, char *argv[]) {
+    // instantiate app and apply sensible default settings
+    SET_QT_APPLICATION_INFO;
+    QGuiApplication::setDesktopFileName(QStringLiteral(PROJECT_NAME));
+    auto app = QApplication(argc, argv);
+    auto settings = CSettings();
+    auto qtSettings = QtUtilities::QtSettings();
+    qtSettings.disableNotices();
+    qtSettings.restore(settings);
+    qtSettings.apply();
 
-    {
-        QCoreApplication app(argc, argv);
-        QStringList argList = QCoreApplication::arguments();
-        for (const QString &arg : argList){
-            if (arg == QLatin1String("--version")) {
-                fprintf(stdout, "pianobooster " PB_VERSION "\n");
-                return EXIT_SUCCESS;
-            }
+    // print version
+    const auto argList = QCoreApplication::arguments();
+    for (const auto &arg : argList){
+        if (arg == QLatin1String("--version")) {
+            fprintf(stdout, "pianobooster " APP_VERSION "\n");
+            return EXIT_SUCCESS;
         }
     }
 
-    QApplication app(argc, argv);
-    QtWindow window;
+    // show main window and execute app
+    auto window = QtWindow(&settings, &qtSettings);
     window.show();
-
-    int value = app.exec();
+    const auto ret = app.exec();
+    settings.writeSettings();
     closeLogs();
-    return value;
+    return ret;
 }

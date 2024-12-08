@@ -29,8 +29,12 @@
 #include <fstream>
 #include <sstream>
 
+#include <QCoreApplication>
+#include <QDir>
 #include <QElapsedTimer>
+#include <QFile>
 #include <QTime>
+#include <QStringBuilder>
 
 #include "Util.h"
 #include "Cfg.h"
@@ -67,7 +71,7 @@ static void openLogFile() {
 
 static void flushLogs()
 {
-    if (logInfoFile != stdout && logsOpened)
+    if (logInfoFile && logsOpened)
     {
         fflush(logInfoFile);
         // logErrorFile is the same as logInfoFile
@@ -270,7 +274,7 @@ static qint64 benchMarkUpdate(benchData_t *pBench,  qint64 previousTime)
 
 void benchMark(unsigned int id, const QString &message)
 {
-    if (id >= arraySize(s_benchData))
+    if (id >= arraySizeAs<unsigned int>(s_benchData))
         return;
     if (s_benchData[id].msg.size() == 0 )
         s_benchData[id].msg = message;
@@ -309,17 +313,20 @@ void benchMarkResults()
     }
 }
 
-// Returns the location of where the data is stored
-// for an AppImage the dataDir is must be relative to the applicationDirPath
-QString Util::dataDir() {
-    QString appImagePath = qgetenv("APPIMAGE");
-
-    if (appImagePath.isEmpty() )
-        return QString(PREFIX)+"/"+QString(DATA_DIR);
-    QString appImageInternalPath = QApplication::applicationDirPath();
-    int i = appImageInternalPath.lastIndexOf(PREFIX);
-
-    appImageInternalPath.truncate(i);
-
-    return (appImageInternalPath+QString(PREFIX)+"/"+QString(DATA_DIR));
+// Returns the location where the data is stored
+QString Util::dataDir(const QString &subDir) {
+    const auto appDirPath = QCoreApplication::applicationDirPath();
+    if (const auto nextToBin = QString(appDirPath % QChar('/') % subDir); QFile::exists(nextToBin)) {
+        return nextToBin;
+    }
+    if (const auto builtIn = QStringLiteral(":/") + subDir; QFile::exists(builtIn)) {
+        return builtIn;
+    }
+#ifdef Q_OS_DARWIN
+    return appDirPath % QStringLiteral("/../Resources/") % subDir;
+#else
+    return appDirPath % (QDir(appDirPath).dirName() == QLatin1String("bin")
+                             ? QStringLiteral("/../" DATA_DIR "/")
+                             : QStringLiteral("/" DATA_DIR "/")) % subDir;
+#endif
 }

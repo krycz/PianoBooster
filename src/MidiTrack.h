@@ -34,8 +34,6 @@
 #include "Queue.h"
 #include "MidiEvent.h"
 
-using namespace std;
-
 typedef enum
 {
     SMF_NO_ERROR,
@@ -54,7 +52,7 @@ typedef unsigned long dword_t;
 class CMidiTrack
 {
 public:
-    CMidiTrack(fstream& file, int no);
+    CMidiTrack(std::fstream& file, int no);
 
     ~CMidiTrack()
     {
@@ -65,7 +63,7 @@ public:
         }
     }
 
-    int readDelaTime()
+    int readDeltaTime()
     {
         int deltaTime = m_deltaTime;
         m_deltaTime = 0;
@@ -74,7 +72,7 @@ public:
 
     dword_t getTrackLength() {return m_trackLength;}
     void decodeTrack();
-    bool failed() { return (m_midiError != SMF_NO_ERROR) ? true : false;}
+    bool failed() { return m_midiError != SMF_NO_ERROR;}
     midiErrors_t getMidiError() { return m_midiError;}
 
     int length() {return m_trackEventQueue->length();}
@@ -109,7 +107,7 @@ private:
         if (m_trackLengthCounter != 0 )
         {
             c = static_cast<byte_t>(m_file.get());
-            if (m_file.fail() == true)
+            if (m_file.fail())
                 errorFail(SMF_END_OF_FILE);
             m_trackLengthCounter--;
         }
@@ -135,7 +133,7 @@ private:
     void decodeMidiEvent();
     dword_t readVarLen();
 
-    string readTextEvent();
+    std::string readTextEvent();
     dword_t readDataEvent(int expectedLength);
     void readMetaEvent(byte_t type);
     void ignoreSysexEvent(byte_t data);
@@ -156,10 +154,10 @@ private:
         }
     }
 
-    fstream& m_file;
+    std::fstream& m_file;
     int m_trackNumber;
 
-    streampos m_filePos;
+    std::streampos m_filePos;
     dword_t m_trackLength;
     dword_t m_trackLengthCounter;
     CQueue<CMidiEvent>* m_trackEventQueue;

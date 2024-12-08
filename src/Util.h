@@ -36,8 +36,6 @@
 #include <QString>
 #include <QApplication>
 
-using namespace std;
-
 #define MAX_MIDI_CHANNELS       16      // There are always at most 16 midi channels
 #define MIDDLE_C                60
 #define MIDI_OCTAVE             12
@@ -94,7 +92,7 @@ void benchMarkResults();
 
 class Util {
 public:
-    static QString dataDir();
+    static QString dataDir(const QString &subDir);
 };
 
 #endif //__UTIL_H__

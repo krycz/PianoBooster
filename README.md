@@ -81,6 +81,12 @@ The **PianoBooster** documentation and music are released under the Creative Com
 
 [PianoBooster License](license.txt)
 
+## Attribution for 3rd party content
+The icons found under `images/breeze` are taken from the
+[KDE/Breeze](https://invent.kde.org/frameworks/breeze-icons) project. The icon
+`media-playback-from-start.svg` is not an exact copy but made of elements from Breeze icons.
+
+
 # SOURCE CODE
 
 As part of GNU General Public License the source code for **PianoBooster** is available from

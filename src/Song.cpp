@@ -29,6 +29,8 @@
 #include "Song.h"
 #include "Score.h"
 
+#include "resources/config.h"
+
 void CSong::init2(CScore * scoreWin, CSettings* settings)
 {
 
@@ -48,7 +50,7 @@ void CSong::loadSong(const QString & filename)
 
     m_songFilename = filename;  // Add this line
     m_songTitle = filename;
-    int index = m_songTitle.lastIndexOf("/");
+    const auto index = m_songTitle.lastIndexOf(QChar('/'));
     if (index >= 0)
         m_songTitle = m_songTitle.right( m_songTitle.length() - index - 1);
 
@@ -56,9 +58,11 @@ void CSong::loadSong(const QString & filename)
 #ifdef _WIN32
      fn = fn.replace('/','\\');
 #endif
-    m_midiFile->setLogLevel(3);
-    m_midiFile->openMidiFile(string(fn.toLocal8Bit().data()));
+    auto logLevelOk = false;
+    auto logLevel = qEnvironmentVariableIntValue(PROJECT_VARNAME_UPPER "_MIDI_FILE_LOG_LEVEL", &logLevelOk);
     ppLogInfo("Opening song %s",  fn.toLocal8Bit().data());
+    m_midiFile->setLogLevel(logLevelOk ? logLevel : 3);
+    m_midiFile->openMidiFile(std::string(fn.toLocal8Bit().data()));
     transpose(0);
     midiFileInfo();
     m_midiFile->setLogLevel(99);
@@ -165,36 +169,18 @@ eventBits_t CSong::task(qint64 ticks)
     // ppLogInfo("CSong::task called with ticks==%d", (int)ticks);
     realTimeEngine(ticks);
 
-    while (true)
+    for (auto scoreHasEnoughSpace = true; !m_reachedMidiEof && scoreHasEnoughSpace;)
     {
-        if (m_reachedMidiEof == true) {
-            ppLogDebug("Reached MIDI EOF");  // Log EOF condition
-            goto exitTask;
-        }
-
-        while (true)
+        // loop as long as there is space and that the score also has space
+        while (midiEventSpace() > 10 && chordEventSpace() > 10 && (scoreHasEnoughSpace = m_scoreWin->midiEventSpace() > 100))
         {
-            // Check that there is space
-            if (midiEventSpace() <= 10 || chordEventSpace() <= 10) {
-                ppLogDebug("Queue space low - midi: %d, chord: %d", 
-                          midiEventSpace(), chordEventSpace());
-                break;
-            }
-
-            // and that the Score has space also
-            if (m_scoreWin->midiEventSpace() <= 100) {
-                ppLogDebug("Score space low: %d", 
-                          m_scoreWin->midiEventSpace());
-                break;
-            }
-
             // Read the next events
             CMidiEvent event = m_midiFile->readMidiEvent();
 
             ppLogTrace("Song event delta %d type 0x%x chan %d Note %d", event.deltaTime(), event.type(), event.channel(), event.note());
 
             // Find the next chord
-            if (m_findChord.findChord(event, getActiveChannel(), PB_PART_both) == true)
+            if (m_findChord.findChord(event, getActiveChannel(), PB_PART_both))
                 chordEventInsert( m_findChord.getChord() ); // give the Conductor the chord event
 
             // send the events to the other end
@@ -211,17 +197,18 @@ eventBits_t CSong::task(qint64 ticks)
         }
 
         // carry on with the data until we reach the bar we want
-        if (seekingBarNumber() && m_reachedMidiEof == false && playingMusic())
-        {
-            realTimeEngine(0);
-            m_scoreWin->drawScrollingSymbols(false); // don't display any thing just  remove from the queue
-        }
-        else
+        if (!seekingBarNumber() || m_reachedMidiEof || !playingMusic())
             break;
+
+        realTimeEngine(0);
+        m_scoreWin->drawScrollingSymbols(false); // don't display any thing just  remove from the queue
     }
 
-exitTask:
-    eventBits_t eventBits = m_realTimeEventBits;
+    // unset the seeking state (noop if not seeking anyways)
+    doneSeekingBarNumber();
+
+    // return and unset event bits
+    const auto eventBits = m_realTimeEventBits;
     m_realTimeEventBits = 0;
     return eventBits;
 }
@@ -316,7 +303,7 @@ bool CSong::pcKeyPress(int key, bool down)
         return true;
     }
 
-    for (j = 0; j < arraySize(pcNoteLookup); j++)
+    for (j = 0; j < arraySizeAs<std::size_t>(pcNoteLookup); j++)
     {
         if ( key==pcNoteLookup[j].key)
         {

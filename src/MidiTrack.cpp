@@ -41,7 +41,7 @@
 
 int CMidiTrack::m_logLevel;
 
-CMidiTrack::CMidiTrack(fstream& file, int no) :m_file(file), m_trackNumber(no)
+CMidiTrack::CMidiTrack(std::fstream& file, int no) :m_file(file), m_trackNumber(no)
 {
     m_trackEventQueue = nullptr;
     m_savedRunningStatus = 0;
@@ -93,6 +93,7 @@ void CMidiTrack::ppDebugTrack(int level, const char *msg, ...)
     vfprintf(stdout, msg, ap);
     va_end(ap);
     fputc('\n', stdout);
+    fflush(stdout);
 }
 
 dword_t CMidiTrack::readVarLen()
@@ -104,14 +105,14 @@ dword_t CMidiTrack::readVarLen()
     if ((value = readByte()) & 0x80)
     {
         value &= 0x7F;
-        for (i =0; i < 4; i++)
-        {
-            value = ( value << 7 ) + (( c = readByte()) & 0x7F );
-            if (failed() == true)
+        if (failed()) {
+            return value;
+        }
+        for (i = 0; i < 4; ++i) {
+            value = (value << 7) + (( c = readByte()) & 0x7F );
+            if (failed() || (c & 0x80) == 0)
                 break;
-            if ((c & 0x80) == 0)
-                break;
-            else if (i>=3)
+            else if (i >= 3)
                 errorFail(SMF_END_OF_FILE);
         }
     }
@@ -119,14 +120,14 @@ dword_t CMidiTrack::readVarLen()
     if (value > 400)
         __dt(ppDebugTrack(2,"Large variable length data %d", value));
 #endif
-    return ( value );
+    return value;
 }
 
-string CMidiTrack::readTextEvent()
+std::string CMidiTrack::readTextEvent()
 {
     dword_t length;
 
-    string text;
+    std::string text;
     length = readVarLen();
     if (length >= 1000)
     {
@@ -188,36 +189,20 @@ void  CMidiTrack::ignoreSysexEvent(byte_t data)
 /* Time Signature */
 void CMidiTrack::readTimeSignatureEvent()
 {
-    byte_t timeSigNumerator;
-    byte_t timeSigDenominator;
-    CMidiEvent event;
-    byte_t b3, b4;
-
     const auto len = readVarLen();
-    if (len!=4)
+    if (len != 4)
     {
         errorFail(SMF_CORRUPTED_MIDI_FILE);
         return;
     }
-    timeSigNumerator = readByte();  // The number on the top
-    timeSigDenominator = readByte(); // the number on the bottom
-    if (timeSigDenominator >= 5)
-    {
-        errorFail(SMF_CORRUPTED_MIDI_FILE);
-        return;
-    }
-    if (timeSigNumerator > 20)
-    {
-        errorFail(SMF_CORRUPTED_MIDI_FILE);
-        return;
-    }
-    //len = (1<<timeSigDenominator);
-
-    b3 = readByte();           /* Ignore the last bytes */
-    b4 = readByte();           /* Ignore the last bytes */
-    event.metaEvent(readDelaTime(), MIDI_PB_timeSignature, timeSigNumerator, 1<<timeSigDenominator);
+    const auto timeSigNumerator = readByte();  // the number on the top
+    const auto timeSigDenominator = readByte(); // the number on the bottom
+    const auto b3 = readByte();
+    const auto b4 = readByte();
+    auto event = CMidiEvent();
+    event.metaEvent(readDeltaTime(), MIDI_PB_timeSignature, timeSigNumerator, 1 << timeSigDenominator);
     m_trackEventQueue->push(event);
-    __dt(ppDebugTrack(4,"Key Signature %d/%d metronome %d quarter %d", timeSigNumerator, 1<<timeSigDenominator, b3, b4));
+    __dt(ppDebugTrack(4,"Key Signature %d/%d metronome %d quarter %d", timeSigNumerator, 1 << timeSigDenominator, b3, b4));
 }
 
 /* Key Signature */
@@ -241,7 +226,7 @@ void CMidiTrack::readKeySignatureEvent()
         return;
     }
 
-    event.metaEvent(readDelaTime(), MIDI_PB_keySignature, keySig, majorKey);
+    event.metaEvent(readDeltaTime(), MIDI_PB_keySignature, keySig, majorKey);
     m_trackEventQueue->push(event);
     __dt(ppDebugTrack(4,"Key Signature %d maj/min %d", keySig, majorKey));
     if (CStavePos::getKeySignature() == NOT_USED)
@@ -250,7 +235,7 @@ void CMidiTrack::readKeySignatureEvent()
 
 void CMidiTrack::readMetaEvent(byte_t type)
 {
-    string text;
+    std::string text;
     __dt(dword_t data);
 
     if (failed() == true)
@@ -298,7 +283,7 @@ void CMidiTrack::readMetaEvent(byte_t type)
         const auto b2 = readByte();
         const auto b3 = readByte();
         const auto tempo = b1 << 16 | b2 << 8 | b3; // microseconds per quarter-note#
-        event.metaEvent(readDelaTime(), MIDI_PB_tempo, static_cast<int>(tempo), 0);
+        event.metaEvent(readDeltaTime(), MIDI_PB_tempo, static_cast<int>(tempo), 0);
         m_trackEventQueue->push(event);
         __dt(ppDebugTrack(2,"Set Tempo %d", tempo));
         break;
@@ -448,14 +433,14 @@ void CMidiTrack::decodeMidiEvent()
     {
     case MIDI_NOTE_OFF:              /* Note off */
         data2 = readByte();
-        noteOffEvent(event, readDelaTime(), channel, data1, data2);
+        noteOffEvent(event, readDeltaTime(), channel, data1, data2);
         break;
 
     case MIDI_NOTE_ON:             /* Note on */
         data2 = readByte();
         if (data2 != 0 )
         {
-            event.noteOnEvent(readDelaTime(), channel, data1, data2);
+            event.noteOnEvent(readDeltaTime(), channel, data1, data2);
             __dt(ppDebugTrack(1,"Chan %d note on %d",channel + 1, data1));
 
             event.setDuration(m_currentTime); // Set the duration to the current time for now
@@ -469,39 +454,39 @@ void CMidiTrack::decodeMidiEvent()
         }
         else
         {
-            noteOffEvent(event, readDelaTime(), channel, data1, 0);
+            noteOffEvent(event, readDeltaTime(), channel, data1, 0);
         }
         break;
 
     case MIDI_NOTE_PRESSURE :              /* Key pressure After touch (POLY_AFTERTOUCH)  3 bytes */
         data2 = readByte();
-        event.notePressure(readDelaTime(), channel, data1, data2);
+        event.notePressure(readDeltaTime(), channel, data1, data2);
         m_trackEventQueue->push(event);
         __dt(ppDebugTrack(2,"Chan %d After touch", channel + 1));
         break;
 
     case MIDI_PROGRAM_CHANGE :               /* program change */
-        event.programChangeEvent(readDelaTime(), channel, data1);
+        event.programChangeEvent(readDeltaTime(), channel, data1);
         m_trackEventQueue->push(event);
         __dt(ppDebugTrack(2,"Chan %d Program change %d", channel + 1, data1 + 1));
         break;
 
     case MIDI_CONTROL_CHANGE :               /* Control Change */
         data2 = readByte();
-        event.controlChangeEvent(readDelaTime(), channel, data1, data2);
+        event.controlChangeEvent(readDeltaTime(), channel, data1, data2);
         m_trackEventQueue->push(event);
         __dt(ppDebugTrack(2,"Chan %d Control Change %d %d", channel + 1, data1, data2));
         break;
 
     case MIDI_CHANNEL_PRESSURE:            /* Channel Pressure (AFTERTOUCH)*/
-        event.channelPressure(readDelaTime(), channel, data1);
+        event.channelPressure(readDeltaTime(), channel, data1);
         m_trackEventQueue->push(event);
         __dt(ppDebugTrack(2,"Chan %d Channel Pressure", channel + 1));
         break;
 
     case MIDI_PITCH_BEND:    /* Pitch bend */
         data2 = readByte();
-        event.pitchBendEvent(readDelaTime(), channel, data1, data2);
+        event.pitchBendEvent(readDeltaTime(), channel, data1, data2);
         m_trackEventQueue->push(event);
         __dt(ppDebugTrack(2,"Chan %d Pitch bend",channel + 1));
         break;
@@ -510,6 +495,8 @@ void CMidiTrack::decodeMidiEvent()
         decodeSystemMessage(status, data1);
         m_savedRunningStatus=0;
         break;
+    default:
+        __dt(ppDebugTrack(2,"Chan %d Unknown event %d", channel + 1, status & 0xf0));
     }
 }
 
@@ -517,7 +504,7 @@ void CMidiTrack::decodeTrack()
 {
     CMidiEvent event;
 
-    m_file.seekg(m_filePos, ios::beg);
+    m_file.seekg(m_filePos, std::ios::beg);
     while (true)
     {
         if (m_trackLengthCounter== 0)

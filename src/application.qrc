@@ -1,15 +1,15 @@
 <RCC>
-    <qresource prefix="/" >
+    <qresource prefix="/">
         <file>images/pianobooster.png</file>
-        <file>images/copy.png</file>
-        <file>images/cut.png</file>
-        <file>images/flag.png</file>
-        <file>images/new.png</file>
-        <file>images/open.png</file>
-        <file>images/paste.png</file>
-        <file>images/play-from-start.png</file>
-        <file>images/play.png</file>
-        <file>images/save.png</file>
-        <file>images/stop.png</file>
+        <file>images/breeze/document-new.svg</file>
+        <file>images/breeze/document-open.svg</file>
+        <file>images/breeze/document-save.svg</file>
+        <file>images/breeze/edit-copy.svg</file>
+        <file>images/breeze/edit-cut.svg</file>
+        <file>images/breeze/edit-paste.svg</file>
+        <file>images/breeze/flag-red.svg</file>
+        <file>images/breeze/media-playback-from-start.svg</file>
+        <file>images/breeze/media-playback-start.svg</file>
+        <file>images/breeze/media-playback-stop.svg</file>
     </qresource>
 </RCC>

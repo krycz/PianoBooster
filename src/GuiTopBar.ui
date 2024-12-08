@@ -59,7 +59,7 @@
        </property>
        <property name="icon">
         <iconset resource="application.qrc">
-         <normaloff>:/images/play-from-start.png</normaloff>:/images/play-from-start.png</iconset>
+         <normaloff>:/images/breeze/media-playback-from-start.svg</normaloff>:/images/breeze/media-playback-from-start.svg</iconset>
        </property>
        <property name="iconSize">
         <size>
@@ -82,7 +82,7 @@
        </property>
        <property name="icon">
         <iconset resource="application.qrc">
-         <normaloff>:/images/play.png</normaloff>:/images/play.png</iconset>
+         <normaloff>:/images/breeze/media-playback-start.svg</normaloff>:/images/breeze/media-playback-start.svg</iconset>
        </property>
        <property name="iconSize">
         <size>
@@ -174,7 +174,7 @@
        </property>
        <property name="icon">
         <iconset resource="application.qrc">
-         <normaloff>:/images/flag.png</normaloff>:/images/flag.png</iconset>
+         <normaloff>:/images/breeze/flag-red.svg</normaloff>:/images/breeze/flag-red.svg</iconset>
        </property>
        <property name="iconSize">
         <size>

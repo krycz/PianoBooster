@@ -48,14 +48,19 @@ class QSlider;
 class QPushButton;
 class QTextBrowser;
 
-static constexpr int maxRecentFiles() { return 20; }
+static constexpr qsizetype maxRecentFiles() { return 20; }
+
+namespace QtUtilities {
+class SettingsDialog;
+class QtSettings;
+} // namespace QtUtilities
 
 class QtWindow : public QMainWindow
 {
     Q_OBJECT
 
 public:
-    QtWindow();
+    QtWindow(CSettings* settings, QtUtilities::QtSettings *qtSettings = nullptr, QWidget *parent = nullptr);
     ~QtWindow();
 
     void init();
@@ -84,18 +89,9 @@ private slots:
     void about();
     void keyboardShortcuts();
     void openRecentFile();
+    void changeColorTheme(QAction *triggeredAction);
 
     void showMidiSetup();
-
-    void showPreferencesDialog()
-    {
-        GuiPreferencesDialog preferencesDialog(this);
-        preferencesDialog.init(m_song, m_settings, m_glWidget);
-        preferencesDialog.exec();
-
-        refreshTranslate();
-        m_score->refreshScroll();
-    }
 
     void showSongDetailsDialog()
     {
@@ -111,9 +107,11 @@ private slots:
         keyboardSetup.exec();
     }
 
+    void showUISettingsDialog();
+
     void toggleSidePanel()
     {
-        m_sidePanel->setVisible(m_sidePanelStateAct->isChecked());
+        m_sidePanelDockWidget->setVisible(m_sidePanelStateAct->isChecked());
     }
 
     void onViewPianoKeyboard(){
@@ -192,14 +190,13 @@ private:
     void writeSettings();
 
     CSettings* m_settings;
+    QtUtilities::QtSettings *m_qtSettings;
+    QtUtilities::SettingsDialog *m_settingsDlg;
 
+    QDockWidget *m_sidePanelDockWidget;
     GuiSidePanel *m_sidePanel;
     GuiTopBar *m_topBar;
     QTextBrowser *m_tutorWindow;
-
-    QTranslator translator;
-    QTranslator translatorMusic;
-    QTranslator qtTranslator;
 
     QMap<QWidget*,QMap<QString,QString>> listWidgetsRetranslateUi;
     QMap<QAction*,QMap<QString,QString>> listActionsRetranslateUi;
@@ -208,6 +205,7 @@ private:
     QAction *m_openAct;
     QAction *m_exitAct;
     QAction *m_aboutAct;
+    QAction *m_aboutQtAct;
     QAction *m_shortcutAct;
     QAction *m_songPlayAct;
     QAction *m_setupMidiAct;
@@ -215,11 +213,12 @@ private:
     QAction *m_sidePanelStateAct;
     QAction *m_viewPianoKeyboard;
     QAction *m_fullScreenStateAct;
-    QAction *m_setupPreferencesAct;
+    QAction *m_setupUISettingsAct;
     QAction *m_songDetailsAct;
 
     QMenu *m_fileMenu;
     QMenu *m_viewMenu;
+    QMenu *m_colorThemeMenu;
     QMenu *m_songMenu;
     QMenu *m_setupMenu;
     QMenu *m_helpMenu;
@@ -229,6 +228,7 @@ private:
     QAction *m_separatorAct;
 
     QAction *m_recentFileActs[maxRecentFiles()];
+    QActionGroup *m_colorThemeActGrp;
 };
 
 #endif // __QT_WINDOW_H__

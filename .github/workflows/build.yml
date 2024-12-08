@@ -34,7 +34,7 @@ jobs:
         run: |
           mkdir build
           cd build
-          cmake .. -DCMAKE_INSTALL_PREFIX=/usr -DQT_PACKAGE_NAME=Qt5
+          cmake .. -DCMAKE_INSTALL_PREFIX=/usr -DQT_PACKAGE_PREFIX=Qt5
           make -j$(nproc)
           make install DESTDIR=AppDir
           # Package
@@ -87,7 +87,7 @@ jobs:
         run: |
           mkdir build
           cd build
-          cmake .. -DCMAKE_INSTALL_PREFIX=/usr -DQT_PACKAGE_NAME=Qt6
+          cmake .. -DCMAKE_INSTALL_PREFIX=/usr -DQT_PACKAGE_PREFIX=Qt6
           make -j$(nproc)
           make install DESTDIR=AppDir
           # Package
@@ -134,7 +134,7 @@ jobs:
           mkdir build
           cd build
           export PKG_CONFIG_PATH="$(brew --prefix readline)/lib/pkgconfig:$PKG_CONFIG_PATH"
-          cmake .. -DCMAKE_PREFIX_PATH="$(brew --prefix qt@6);" -DQT_PACKAGE_NAME=Qt6
+          cmake .. -DCMAKE_PREFIX_PATH="$(brew --prefix qt@6);" -DQT_PACKAGE_PREFIX=Qt6
           make
           make install-translations
           $(brew --prefix qt@6)/bin/macdeployqt build/pianobooster.app -dmg

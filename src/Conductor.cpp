@@ -315,7 +315,7 @@ void CConductor::reconnectMidi()
 {
     if (!validMidiOutput()) {
         QString midiInputName = m_settings->value("Midi/Input").toString();
-        if (midiInputName.startsWith(tr("None"))) {
+        if (midiInputName.startsWith(QCoreApplication::translate("CConductor", "None"))) {
             CChord::setPianoRange(PC_KEY_LOWEST_NOTE, PC_KEY_HIGHEST_NOTE);
         } else {
             CChord::setPianoRange(m_settings->value("Keyboard/LowestNote", 0).toInt(),
@@ -641,13 +641,11 @@ void CConductor::pianistInput(CMidiEvent inputNote)
         {
             m_goodPlayedNotes.addNote(hand, inputNote.note());
             m_piano->addPianistNote(hand, inputNote,true);
-            qint64 pianistTiming;
-            if  ( ( cfg_timingMarkersFlag && m_followSkillAdvanced ) || m_playMode == PB_PLAY_MODE_rhythmTapping )
-                pianistTiming = m_pianistTiming;
-            else
-                pianistTiming = NOT_USED;
+            const auto pianistTiming = cfg_timingMarkersFlag || m_playMode == PB_PLAY_MODE_rhythmTapping
+                ? m_pianistTiming
+                : qint64(NOT_USED);
             m_scoreWin->setPlayedNoteColor(inputNote.note(),
-                        (!m_followPlayingTimeOut)? Cfg::playedGoodColor():Cfg::playedBadColor(),
+                        (!m_followPlayingTimeOut)? Cfg::colorTheme().playedGoodColor : Cfg::colorTheme().playedBadColor,
                         m_chordDeltaTime, pianistTiming);
 
             if (validatePianistChord() == true)
@@ -688,7 +686,7 @@ void CConductor::pianistInput(CMidiEvent inputNote)
                     else // Hitting bad notes within the zone (so register them)
                       {
                     // Register the wrong note in the ratings calculation (if not as missed notes, I don't believe it's factored in)
-                    missedNotesColor(Cfg::pianoBadColor());
+                    missedNotesColor(Cfg::colorTheme().pianoBadColor);
                     m_rating.lateNotes(m_wantedChord.length() - m_goodPlayedNotes.length());
                     setEventBits(EVENT_BITS_forceRatingRedraw);
                     fetchNextChord(); // Skip through the wrong note and continue to the next
@@ -704,7 +702,7 @@ void CConductor::pianistInput(CMidiEvent inputNote)
                         else
                           pianistTiming = NOT_USED;
                         m_scoreWin->setPlayedNoteColor(inputNote.note(),
-                                    (!m_followPlayingTimeOut)? Cfg::playedGoodColor():Cfg::playedBadColor(),
+                                    (!m_followPlayingTimeOut)? Cfg::colorTheme().playedGoodColor : Cfg::colorTheme().playedBadColor,
                             m_chordDeltaTime, pianistTiming);
 
                         if (validatePianistChord() == true)
@@ -747,7 +745,7 @@ void CConductor::pianistInput(CMidiEvent inputNote)
 
         if (hasNote)
             m_scoreWin->setPlayedNoteColor(inputNote.note(),
-                    (!m_followPlayingTimeOut)? Cfg::noteColor():Cfg::playedStoppedColor(),
+                    (!m_followPlayingTimeOut)? Cfg::colorTheme().noteColor:Cfg::colorTheme().playedStoppedColor,
                     m_chordDeltaTime);
 
         outputSavedNotesOff();
@@ -852,7 +850,7 @@ void CConductor::followPlaying()
     {
         if (m_chordDeltaTime > m_cfg_playZoneLate )
         {
-            missedNotesColor(Cfg::playedStoppedColor());
+            missedNotesColor(Cfg::colorTheme().playedStoppedColor);
             fetchNextChord();
             m_rating.lateNotes(m_wantedChord.length() - m_goodPlayedNotes.length());
             setEventBits( EVENT_BITS_forceRatingRedraw);
@@ -932,7 +930,7 @@ void CConductor::realTimeEngine(qint64 mSecTicks)
                 m_rating.lateNotes(m_wantedChord.length() - m_goodPlayedNotes.length());
                 setEventBits( EVENT_BITS_forceRatingRedraw);
 
-                missedNotesColor(Cfg::playedStoppedColor());
+                missedNotesColor(Cfg::colorTheme().playedStoppedColor);
                 findImminentNotesOff();
                 // Don't keep any saved notes off if there are no notes down
                 if (m_piano->pianistAllNotesDown() == 0)

@@ -37,7 +37,7 @@
 
 #include "MidiEvent.h"
 
-class CMidiDeviceBase : public QObject
+class CMidiDeviceBase
 {
 public:
     virtual void init() = 0;

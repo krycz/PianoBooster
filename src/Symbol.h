@@ -50,10 +50,15 @@ typedef enum
 
     PB_SYMBOL_noteHead,             // ONLY ADD NOTES BELOW THIS MAKER
     PB_SYMBOL_demisemiquaver,       // Demisemiquaver / Thirty-second note
+    PB_SYMBOL_threesixtyforth,      // Three-sixtyforth note (thirty-second note with dot)
     PB_SYMBOL_semiquaver,           // Semiquaver / Sixteenth note
+    PB_SYMBOL_threethirtysecond,    // Three-thirty-second note (sixteenth note with dot)
     PB_SYMBOL_quaver,               // Quaver / Eighth note
+    PB_SYMBOL_threesixteenth,       // Three-sixteenth note (eighth note with dot)
     PB_SYMBOL_crotchet,             // Crotchet / Quarter note
+    PB_SYMBOL_threeeighth,          // Three-eighth note (quarter note with dot)
     PB_SYMBOL_minim,                // Minim / Half note
+    PB_SYMBOL_threequater,          // Three-quater note (half note with dot)
     PB_SYMBOL_semibreve,            // Semibreve / Whole note
     PB_SYMBOL_breve,                // Breve / Double whole note
 
@@ -73,14 +78,14 @@ public:
 
     ////////////////////////////////////////////////////////////////////////////////
     //@brief constructors
-    CSymbol(musicalSymbol_t type, whichPart_t hand, int midiNote)
+    CSymbol(musicalSymbol_t type, whichPart_t hand, int midiNote, int clef = -1)
     {
         init();
         m_symbolType = type;
         m_midiNote = midiNote;
         m_hand = hand;
         m_midiDuration = 0;
-        m_stavePos.notePos(hand, midiNote);
+        m_stavePos.notePos(hand, midiNote, clef);
     }
 
     CSymbol()
@@ -88,7 +93,7 @@ public:
         init();
     }
 
-    CSymbol(musicalSymbol_t type,  CStavePos stavePos, CColor color = Cfg::noteColor())
+    CSymbol(musicalSymbol_t type,  CStavePos stavePos, CColor color = Cfg::colorTheme().noteColor)
     {
         init();
         m_symbolType = type;
@@ -157,6 +162,11 @@ public:
 
     void setAccidentalModifer(accidentalModifer_t value) {m_accidentalModifer = value;}
     accidentalModifer_t getAccidentalModifer() {return m_accidentalModifer;}
+
+    void setClef(int clef = -1)
+    {
+    	m_stavePos.notePos(m_hand, m_midiNote, clef);
+    }
 
 private:
     void init()
