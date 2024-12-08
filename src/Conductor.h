@@ -242,15 +242,64 @@ private:
     void findImminentNotesOff();
     void updatePianoSounds();
 
+    // This function manages the music playback behavior in different play modes. 
+    // It controls the timing of fetching the next chord and turning on keyboard 
+    // lights based on the current play mode and the pianist's performance.
+    //
+    // Functionality:
+    // 1. Check Play Mode: If the play mode is set to "listen", the function exits. 
+    //    This function is only active for interactive play modes.
+    // 2. Fetch Next Chord: If there is no current chord to play, fetch the next 
+    //    chord from the queue.
+    // 3. Seeking Bar: If the application is seeking to a specific bar, fetch the 
+    //    next chord if the current time exceeds the stop point.
+    // 4. Interactive Modes: If the play mode is "followYou" or "rhythmTapping":
+    //    * Set the follow state to `PB_FOLLOW_earlyNotes` if the current time is 
+    //      within the early notes point.
+    //    * If the current time exceeds the stop point:
+    //        * Set the follow state to `PB_FOLLOW_waiting`.
+    //        * Adjust the time to ensure it does not exceed the stop point. 
+    //          This simulates stopping the music playback.
+    // 5. Play Along Mode: If the play mode is "playAlong":
+    //    * If the current time exceeds the play zone's late limit, call 
+    //      `missedNotesColor` to indicate missed notes, fetch the next chord, 
+    //      update the rating, and trigger a redraw event.
+    // 6. Keyboard Lights: If the current time is within the early notes point, 
+    //    turn on the keyboard lights to guide the pianist.
+    //
+    // Note:
+    // This function is crucial for controlling the interactive behavior of the 
+    // music playback in different play modes. It ensures that the application 
+    // responds appropriately to the pianist's input and provides visual cues 
+    // through keyboard lights and note coloring.
     void followPlaying();
     void missedNotesColor(CColor color);
 
     int calcBoostVolume(int chan, int volume);
 
+    // This function updates the time variables in the CConductor and CScore classes. 
+    // It is called after a MIDI event is processed to advance the current playback position.
     void addDeltaTime(int ticks);
     void turnOnKeyboardLights(bool on);
 
+    // This member variable stores the current playback position within the musical piece,
+    // measured in MIDI ticks. It acts as a primary timekeeping element for the MIDI engine,
+    // driving the progression of music playback.
+    //
+    // Invariants:
+    // - should always be non-negative.
+    // - should be monotonically increasing during playback, except when seeking to a new position.
+    // - should be updated consistently with the progression of MIDI events.
     int m_playingDeltaTime;
+
+    // This member variable keeps track of the time elapsed since the last chord was played, 
+    // measured in MIDI ticks. It is used to manage the timing of various events related to chord
+    // playback and user interaction.
+    //
+    // Invariants:
+    // - should always be non-negative.
+    // - should be reset to zero whenever a new chord is fetched.
+    // - should be updated consistently with the MIDI playback position.
     int m_chordDeltaTime;
     bool m_playing;
 
