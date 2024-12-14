@@ -56,6 +56,23 @@ public:
     int getBeatLength() {return m_beatLength;}
     int getBarLength() {return m_barLength;} // in ppqn
 
+    // Sets the bar position from which playback should start. Only supports seeking forward.
+    //
+    // Parameters:
+    // - bar: Target bar position (can include fractional positions)
+    //        Must be >= current position for seeking to work correctly
+    //
+    // Side effects:
+    // - Updates m_playFromBar to the target position
+    // - Recalculates m_playUptoBar = m_playFromBar + m_loopingBars  
+    // - Sets m_seekingBarNumber flag via checkGotoBar() when target is ahead
+    // - Updates m_enablePlayFromBar and m_enableLooping flags
+    //
+    // Usage:
+    // - Call with desired bar number to jump forward to that position
+    // - Use fractional values for precise positioning within bars
+    // - Commonly used for practice loops and section repetition
+    // - To move backward, song must be restarted from beginning
     void setPlayFromBar(double bar);
     void setPlayFromBar(int bar, int beat = 0, int ticks = 0);
     void reset() {
@@ -118,6 +135,19 @@ private:
         m_enablePlayFromBar = (m_enableLooping || m_playFromBar > 0.0)?true:false;
     }
 
+    // This member variable tracks the accumulated time (in MIDI ticks) within the current beat 
+    // of a bar. It represents the fractional part of the current beat position.
+    //
+    // Invariants:
+    // - Should always be non-negative
+    // - Should never exceed m_beatLength * SPEED_ADJUST_FACTOR
+    // - Gets incremented by addDeltaTime() 
+    // - Wraps back to 0 when exceeding m_beatLength, incrementing m_beatCounter
+    //
+    // Usage:
+    // - Used to calculate precise positions within a beat for timing and display
+    // - Critical for maintaining musical timing and bar/beat synchronization
+    // - Contributes to getCurrentBarPos() calculations for fractional bar positions
     int m_deltaTime;
     int m_beatLength; //in ppqn ticks
     int m_barLength; // m_beatLength * getTimeSigTop() (also in ppqn ticks)
@@ -129,13 +159,75 @@ private:
 
     int m_barCounter;
     int m_beatCounter;
+
+    // Stores the starting bar position for playback, supporting fractional bar positions
+    // for precise control. Used in conjunction with m_playUptoBar for section looping.
+    //
+    // Invariants:
+    // - Must be >= 0.0
+    // - When changed, triggers update of m_playUptoBar = m_playFromBar + m_loopingBars
+    // - Affects m_enablePlayFromBar state
+    //
+    // Usage:
+    // - Set through setPlayFromBar() methods
+    // - Used by checkGotoBar() to determine if seeking is needed
+    // - Provides reference point for getCurrentBarPos() comparisons
+    // - Key component in implementing practice sections and loops
     double m_playFromBar;
     double m_playUptoBar;
     double m_loopingBars;
     bool m_seekingBarNumber;
     bool m_flushTicks;
+
+    // Bit field that tracks various bar-related events that need to be communicated 
+    // to other parts of the system. Events include playback state changes, UI updates,
+    // and bar position changes.
+    //
+    // Invariants:
+    // - Can be any combination of EVENT_BITS_* flags OR'ed together
+    // - Cleared after being read via readEventBits()
+    // - Set by various bar operations like addDeltaTime() and checkGotoBar()
+    //
+    // Events:
+    // - EVENT_BITS_playingStopped: End of piece reached
+    // - EVENT_BITS_forceFullRedraw: Request complete screen redraw
+    // - EVENT_BITS_forceRatingRedraw: Request score redraw
+    // - EVENT_BITS_newBarNumber: Bar number changed
+    // - EVENT_BITS_UptoBarReached: Loop end point reached
+    // - EVENT_BITS_loadSong: Song needs to be loaded
+    //
+    // Usage:
+    // - Used for inter-component communication about bar state changes
+    // - Drives UI updates and playback control decisions
+    // - Read and cleared atomically through readEventBits()
     eventBits_t m_eventBits;
+
+    // Flag that indicates whether bar looping is active. When enabled, playback will 
+    // repeat between m_playFromBar and m_playUptoBar positions.
+    //
+    // Invariants:
+    // - True if m_loopingBars > 0.0
+    // - False otherwise
+    // - Only modified by setupEnableFlags()
+    //
+    // Usage:
+    // - Controls whether EVENT_BITS_UptoBarReached is set in checkGotoBar()
+    // - Used to implement repeating sections of music during practice
+    // - Works in conjunction with m_playFromBar and m_playUptoBar to define loop boundaries
     bool m_enableLooping;
+
+    // Flag that controls whether playback should start from a specific bar position.
+    // Gets set when either looping is enabled or when a specific start bar is set 
+    // via setPlayFromBar().
+    //
+    // Invariants:
+    // - True if m_loopingBars > 0.0 or m_playFromBar > 0.0
+    // - False otherwise
+    // - Only modified by setupEnableFlags()
+    //
+    // Usage:
+    // - Controls whether checkGotoBar() is called during addDeltaTime()
+    // - Used to optimize bar position checking when no specific start point is needed
     bool m_enablePlayFromBar;
 
 };
