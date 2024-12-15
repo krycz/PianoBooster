@@ -46,9 +46,11 @@
 
 CGLView::CGLView(QtWindow* parent, CSettings* settings)
     : QGLWidget(parent)
+    , m_qtWindow(parent)
+    , m_settings(settings) 
+    , m_song(new CSong())
+    , m_score(new CScore(settings))
 {
-    m_qtWindow = parent;
-    m_settings = settings;
     m_rating = nullptr;
     m_fullRedrawFlag = true;
     m_forcefullRedraw = 0;
@@ -56,10 +58,6 @@ CGLView::CGLView(QtWindow* parent, CSettings* settings)
     m_forceBarRedraw = 0;
     m_allowedTimerEvent = true;
 
-    m_backgroundColor = QColor(0, 0, 0);
-
-    m_song = new CSong();
-    m_score = new CScore(m_settings);
     m_displayUpdateTicks = 0;
     m_cfg_openGlOptimise = 0; // zero is no GlOptimise
     m_eventBits = 0;

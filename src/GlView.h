@@ -74,11 +74,10 @@ private:
     QString accuracyText;
     int accuracyBarStart = 0;
 
-    QColor m_backgroundColor;
-    QtWindow* m_qtWindow;  // The parent Window
-    CSettings* m_settings;
-    CSong* m_song;
-    CScore* m_score;
+    QtWindow* const m_qtWindow;  // The parent Window
+    CSettings* const m_settings;
+    CSong* const m_song;
+    CScore* const m_score;
     QBasicTimer m_timer;
     QTime m_realtime;
     int m_displayUpdateTicks;
